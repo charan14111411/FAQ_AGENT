@@ -8,3 +8,4 @@ pgvector
 python-dotenv
 pydantic-settings
 sentence-transformers
+langgraph

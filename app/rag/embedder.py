@@ -12,13 +12,17 @@ def get_model():
     if _model is None:
         from sentence_transformers import SentenceTransformer
         logger.info("Loading local SentenceTransformer model 'all-MiniLM-L6-v2' (384 dimensions)...")
-        os.environ.setdefault("HF_HUB_OFFLINE", "1")
+        # Allow online model download unless explicitly forced offline.
+        # Set EMBEDDING_OFFLINE=1 in .env to run strictly from local cache.
+        offline_mode = os.getenv("EMBEDDING_OFFLINE", "0").strip() == "1"
+        if offline_mode:
+            os.environ["HF_HUB_OFFLINE"] = "1"
         try:
-            _model = SentenceTransformer("all-MiniLM-L6-v2", local_files_only=True)
+            _model = SentenceTransformer("all-MiniLM-L6-v2", local_files_only=offline_mode)
         except Exception as e:
             logger.error(
-                "Local SentenceTransformer model load failed. "
-                "Ensure 'all-MiniLM-L6-v2' is cached locally or allow internet access to download it."
+                "SentenceTransformer model load failed. "
+                "If running offline, ensure 'all-MiniLM-L6-v2' is cached locally."
             )
             raise
         logger.info("SentenceTransformer model loaded successfully.")

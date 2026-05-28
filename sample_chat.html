@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Varsapradaya Chat</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --text: #17212d;
+      --muted: #64748b;
+      --line: #dde5ef;
+      --accent: #0f766e;
+      --user: #eaf2ff;
+      --bot: #ecfaf4;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: radial-gradient(circle at top, #fdfefe 0%, var(--bg) 70%);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding: 18px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 12px;
+    }
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .top h1 { margin: 0; font-size: 20px; }
+    .meta { font-size: 12px; color: var(--muted); }
+    input, button, textarea {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 14px;
+    }
+    button {
+      cursor: pointer;
+      border: 0;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      padding: 0 20px;
+    }
+    .ghost {
+      background: #eff6ff;
+      color: #1e3a8a;
+      border: 1px solid #dbeafe;
+    }
+    .chat-shell {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      display: grid;
+      grid-template-rows: 1fr;
+      min-height: 62vh;
+    }
+    .chat {
+      overflow-y: auto;
+      padding: 4px;
+    }
+    .empty {
+      height: 100%;
+      display: grid;
+      place-content: center;
+      text-align: center;
+      gap: 12px;
+      color: var(--muted);
+    }
+    .empty h2 { margin: 0; color: var(--text); font-size: 28px; font-weight: 600; }
+    .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+    .chip {
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      border-radius: 999px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .msg {
+      margin: 8px 0;
+      padding: 10px 12px;
+      border-radius: 12px;
+      max-width: 85%;
+      white-space: pre-wrap;
+      line-height: 1.45;
+    }
+    .user { margin-left: auto; background: var(--user); }
+    .bot { background: var(--bot); }
+    .composer {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px;
+    }
+    textarea { width: 100%; resize: none; min-height: 48px; max-height: 180px; }
+    .cp {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      font-size: 12px;
+      white-space: pre-wrap;
+      color: #0f172a;
+      max-height: 220px;
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h1>Varsapradaya Assistant</h1>
+        <div class="meta" id="status">Ready. Ask anything.</div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input id="baseUrl" value="http://127.0.0.1:8000/api" style="width:260px;" />
+        <button id="resetBtn" class="ghost">New Chat</button>
+        <button id="checkpointsBtn" class="ghost">Checkpoints</button>
+      </div>
+    </div>
+
+    <div class="chat-shell">
+      <div id="chat" class="chat">
+        <div id="emptyState" class="empty">
+          <h2>How can I help?</h2>
+          <div class="chips">
+            <button class="chip" data-q="Give me a quick overview of Varsapradaya.">Company overview</button>
+            <button class="chip" data-q="How does your solution support EUDR compliance?">EUDR compliance</button>
+            <button class="chip" data-q="What is the ROI potential for investors?">Investor ROI</button>
+            <button class="chip" data-q="What support is available for agritech resellers?">Reseller support</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="composer">
+      <textarea id="message" placeholder="Message Varsapradaya Assistant..."></textarea>
+      <button id="sendBtn">Send</button>
+    </div>
+
+    <div id="checkpointOut" class="cp">No checkpoint data yet.</div>
+  </div>
+
+  <script>
+    let userId = null;
+    let sessionId = null;
+    let category = null;
+    let conversationId = null;
+
+    const statusEl = document.getElementById("status");
+    const chatEl = document.getElementById("chat");
+    const emptyStateEl = document.getElementById("emptyState");
+    const messageEl = document.getElementById("message");
+    const checkpointOutEl = document.getElementById("checkpointOut");
+
+    function base() {
+      return document.getElementById("baseUrl").value.replace(/\/$/, "");
+    }
+
+    function addMsg(role, text) {
+      if (emptyStateEl) emptyStateEl.style.display = "none";
+      const div = document.createElement("div");
+      div.className = "msg " + (role === "user" ? "user" : "bot");
+      div.textContent = text;
+      chatEl.appendChild(div);
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+
+    async function api(path, method, body) {
+      const res = await fetch(`${base()}${path}`, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`${res.status}: ${txt}`);
+      }
+      return await res.json();
+    }
+
+    async function sendMessage(text) {
+      addMsg("user", text);
+      statusEl.textContent = "Thinking...";
+      const reply = await api("/chat", "POST", {
+        conversation_id: conversationId,
+        session_id: sessionId,
+        user_id: userId,
+        category,
+        message: text
+      });
+      conversationId = reply.conversation_id || conversationId;
+      sessionId = reply.session_id || sessionId;
+      userId = reply.user_id || userId;
+      category = reply.category || category;
+      addMsg("bot", reply.reply || "[No reply]");
+      statusEl.textContent = `Ready | onboarding=${reply.onboarding_complete ? "done" : (reply.step || "pending")} | session=${sessionId || "n/a"} | agent=${reply.agent || "n/a"}`;
+    }
+
+    document.getElementById("sendBtn").onclick = async () => {
+      try {
+        const text = messageEl.value.trim();
+        if (!text) return;
+        messageEl.value = "";
+        await sendMessage(text);
+      } catch (err) {
+        addMsg("bot", `Error: ${err.message}`);
+        statusEl.textContent = "Error while sending message";
+      }
+    };
+
+    messageEl.addEventListener("keydown", async (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        document.getElementById("sendBtn").click();
+      }
+    });
+
+    document.querySelectorAll(".chip").forEach((chip) => {
+      chip.addEventListener("click", async () => {
+        try {
+          await sendMessage(chip.dataset.q || "");
+        } catch (err) {
+          addMsg("bot", `Error: ${err.message}`);
+        }
+      });
+    });
+
+    document.getElementById("resetBtn").onclick = () => {
+      userId = null;
+      sessionId = null;
+      category = null;
+      conversationId = null;
+      chatEl.innerHTML = "";
+      chatEl.appendChild(emptyStateEl);
+      emptyStateEl.style.display = "grid";
+      checkpointOutEl.textContent = "No checkpoint data yet.";
+      statusEl.textContent = "Ready. Ask anything.";
+      messageEl.focus();
+    };
+
+    document.getElementById("checkpointsBtn").onclick = async () => {
+      try {
+        if (!sessionId) {
+          checkpointOutEl.textContent = "No active session yet.";
+          return;
+        }
+        const data = await api(`/checkpoints/${sessionId}?limit=25`, "GET");
+        checkpointOutEl.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        checkpointOutEl.textContent = `Error: ${err.message}`;
+      }
+    };
+
+    messageEl.focus();
+  </script>
+</body>
+</html>

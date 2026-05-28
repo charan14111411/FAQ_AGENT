@@ -3,13 +3,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.logger import get_logger
 from app.db import engine
-from app.routes import users, sessions, chat, health
+from app.routes import chat, health, checkpoints
 
 logger = get_logger()
 
 app = FastAPI(title="Varsapradaya FAQ Chatbot Backend")
 
 origins = [settings.FRONTEND_URL]
+if settings.FRONTEND_URL == "http://localhost:5500":
+    origins.append("http://127.0.0.1:5500")
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,9 +21,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(users.router, prefix="/api", tags=["Users"])
-app.include_router(sessions.router, prefix="/api", tags=["Sessions"])
 app.include_router(chat.router, prefix="/api", tags=["Chat"])
+app.include_router(checkpoints.router, prefix="/api", tags=["Checkpoints"])
 app.include_router(health.router, prefix="/api", tags=["Health"])
 
 @app.on_event("startup")
