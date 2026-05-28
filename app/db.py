@@ -24,7 +24,7 @@ async def find_user_by_email(db: AsyncSession, email: str):
     result = await db.execute(text(query), {"email": email})
     return result.fetchone()
 
-async def create_user(db: AsyncSession, name: str, phone: str, email: str):
+async def create_user(db: AsyncSession, name: str, email: str, phone: str = None):
     query = """
         INSERT INTO users (name, phone, email)
         VALUES (:name, :phone, :email)
@@ -53,6 +53,7 @@ async def create_session(db: AsyncSession, user_id, category: str, is_returning:
     })
     await db.commit()
     return result.fetchone()
+
 
 async def end_session(db: AsyncSession, session_id):
     query = "UPDATE sessions SET ended_at = NOW() WHERE id = :session_id"

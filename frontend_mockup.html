@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Varsapradaya FAQ UI Mockup</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital@1&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f8f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 600px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            padding: 24px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .message-row {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            background-color: #a3c260;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-weight: 600;
+            font-size: 14px;
+            flex-shrink: 0;
+            margin-right: 16px;
+        }
+
+        .message-bubble {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 18px;
+            color: #4a5568;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
+        .pill-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-left: 56px; /* align with text */
+            margin-bottom: 20px;
+        }
+
+        .pill {
+            background-color: #ffffff;
+            border: 1px solid #a3c260;
+            color: #2d3748;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .pill:hover {
+            background-color: #a3c260;
+            color: #ffffff;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-left: 56px;
+            margin-bottom: 12px;
+        }
+
+        .text-input {
+            flex-grow: 1;
+            background-color: #f4f8f4;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            padding: 12px 16px;
+            font-size: 14px;
+            color: #2d3748;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .text-input:focus {
+            border-color: #a3c260;
+        }
+
+        .send-button {
+            background: none;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            color: #4a5568;
+        }
+
+        .send-button:hover {
+            background-color: #e2e8f0;
+        }
+
+        .own-words-button {
+            margin-left: 56px;
+            background-color: #333333;
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 24px;
+            font-size: 15px;
+            width: calc(100% - 112px);
+            text-align: left;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .own-words-button:hover {
+            background-color: #1a202c;
+        }
+
+        /* Mockup interaction feedback */
+        .feedback {
+            margin-top: 30px;
+            padding: 16px;
+            background-color: #ebf8ff;
+            color: #2b6cb0;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        
+        <!-- Bot Message -->
+        <div class="message-row">
+            <div class="avatar">FF</div>
+            <div class="message-bubble">
+                Tell me about yourself — are you a grower, an investor, or here for something else?
+            </div>
+        </div>
+
+        <!-- 4 Pills -->
+        <div class="pill-container">
+            <button class="pill" onclick="simulateSend('I am a grower')">I'm a grower</button>
+            <button class="pill" onclick="simulateSend('I am an investor')">I'm an investor</button>
+            <button class="pill" onclick="simulateSend('Corporate / Partnership')">Corporate / Partnership</button>
+            <button class="pill" onclick="simulateSend('Agritech')">Agritech</button>
+        </div>
+
+        <!-- Text Box -->
+        <div class="input-row">
+            <input type="text" id="userInput" class="text-input" placeholder="Send us a message. Type Here">
+            <button class="send-button" onclick="sendTextBox()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Own words button -->
+        <button class="own-words-button" onclick="document.getElementById('userInput').focus()">
+            Or tell me in your own words...
+        </button>
+
+        <!-- Feedback Alert for demonstration -->
+        <div id="feedbackBox" class="feedback"></div>
+
+    </div>
+
+    <script>
+        function simulateSend(text) {
+            const feedback = document.getElementById('feedbackBox');
+            feedback.style.display = 'block';
+            feedback.innerHTML = `<strong>Simulated Frontend Action:</strong><br><br>The UI just sent the exact text: <span style="color: #2c5282;">"${text}"</span> to the Backend API (<code>/api/chat</code>).<br><br>The backend will now lock in your category and ask for your Name!`;
+        }
+
+        function sendTextBox() {
+            const input = document.getElementById('userInput');
+            const text = input.value.trim();
+            
+            if (!text) {
+                alert("Please type something first!");
+                return;
+            }
+
+            simulateSend(text);
+            input.value = '';
+        }
+
+        // Add Enter key support
+        document.getElementById('userInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                sendTextBox();
+            }
+        });
+    </script>
+</body>
+</html>
