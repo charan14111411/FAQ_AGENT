@@ -29,6 +29,14 @@ async def handle_chat(req: ChatRequest, request: Request):
         if state_snapshot and state_snapshot.values:
             current_step = state_snapshot.values.get("step", "start")
 
+        if current_step == "ended":
+            return ChatResponse(
+                reply="This conversation has ended. Please refresh the page to start a new chat.",
+                step="ended",
+                agent=state_snapshot.values.get("agent_name") if state_snapshot and state_snapshot.values else None
+            )
+
+
         # Global Agentic Content Moderation (Prevents Groq API Safety Filter from crashing the app)
         from app.agents.base_agent import _call_llm
         moderation_prompt = "You are a content moderation bot. Analyze the user message. If it contains severe profanity, insults, or highly offensive language, reply EXACTLY with 'TOXIC'. Otherwise reply 'SAFE'."
