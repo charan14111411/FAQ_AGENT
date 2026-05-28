@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+groq
+openai
+sqlalchemy[asyncio]
+asyncpg
+pgvector
+python-dotenv
+pydantic-settings
+sentence-transformers
