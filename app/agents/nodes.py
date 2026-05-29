@@ -63,7 +63,8 @@ async def _generate_dynamic_reply(system_prompt: str, user_input: str = "", cate
         "RULE 2: Always be warm, polite, and professional. "
         "RULE 3: If the user's input contains profanity or offensive language, "
         "acknowledge it gently, request professional language, and ask them to retry the current step. "
-        "Never be cold or dismissive.\n\n"
+        "Never be cold or dismissive.\n"
+        "RULE 4: Keep your responses extremely short, concise, and direct (maximum 1-2 sentences). Avoid fluff.\n\n"
     )
 
     if category:
@@ -145,8 +146,8 @@ async def classify_entry_node(state: ChatState) -> dict:
     # Ask for name in the agent's tone (fully LLM-generated, no hardcoded strings)
     prompt = (
         f"The user has identified themselves as belonging to the '{category}' audience. "
-        "Warmly welcome them to Varsapradaya in your role as their advisor. "
-        "Keep it to 2-3 sentences. Then politely ask for their full name to get started."
+        "Warmly welcome them to Varsapradaya. Keep the welcome extremely brief (under 15 words). "
+        "Then ask for their full name to get started."
     )
     reply = await _generate_dynamic_reply(prompt, category=category)
 
@@ -214,8 +215,8 @@ async def collect_name_node(state: ChatState) -> dict:
 
     prompt = (
         f"The user just shared their name: {name}. "
-        "Greet them warmly by their name. "
-        "Then politely ask for their phone number, mentioning it helps with account setup."
+        "Greet them warmly by name, then ask for their phone number for account setup. "
+        "Keep the entire response extremely short and concise (under 20 words)."
     )
     reply = await _generate_dynamic_reply(prompt, category=category)
 
@@ -259,8 +260,8 @@ async def collect_phone_node(state: ChatState) -> dict:
 
     prompt = (
         "The user just provided their phone number successfully. "
-        "Acknowledge it briefly and warmly. "
-        "Then ask for their email address, mentioning it will be used as their unique identifier."
+        "Warmly acknowledge it, then ask for their email address. "
+        "Keep the response extremely brief and concise (under 15 words)."
     )
     reply = await _generate_dynamic_reply(prompt, category=category)
 
@@ -334,8 +335,8 @@ async def _process_email_and_start_chat(state: ChatState, email: str, category: 
             prompt = (
                 f"Welcome back the returning user whose name is {name}. "
                 f"They are now engaging as a {category} audience member. "
-                "Keep the welcome warm and brief (1-2 sentences). "
-                "Then ask: 'What may I help you with today?'"
+                "Keep the welcome warm but extremely short (under 15 words). "
+                "Ask what you can help with today."
             )
             reply = await _generate_dynamic_reply(prompt, category=category)
 
@@ -369,8 +370,8 @@ async def _process_email_and_start_chat(state: ChatState, email: str, category: 
 
             prompt = (
                 f"The new user ({state.get('name', 'there')}) has just completed setup. "
-                "Tell them they are all set and ready to go — keep it enthusiastic and brief. "
-                "Then ask: 'What may I help you with today?'"
+                "Briefly tell them they are all set, then ask what you can help with today. "
+                "Keep the response under 15 words."
             )
             reply = await _generate_dynamic_reply(prompt, category=category)
 
@@ -442,10 +443,9 @@ async def chat_node(state: ChatState) -> dict:
             # We ask politely (up to 2 times).
             # The prompt instructs the agent to politely ask if there is anything else they can help with.
             prompt = (
-                f"The user has indicated they want to end the conversation. "
-                f"This is attempt {new_attempts} of ending the chat. "
-                "Politely and warmly ask them if there is anything else you can help them with before they go. "
-                "Keep it brief (1-2 sentences maximum)."
+                f"The user wants to end the conversation (attempt {new_attempts}). "
+                "Politely and warmly ask if there is anything else you can help them with. "
+                "Keep it extremely brief and concise (under 15 words)."
             )
             reply = await _generate_dynamic_reply(prompt, category=category)
 
@@ -472,9 +472,8 @@ async def chat_node(state: ChatState) -> dict:
 
             # Generate a warm final goodbye/greet message in persona
             prompt = (
-                f"The user ({state.get('name', 'there')}) has confirmed they are done. "
-                "Give a warm, final closing message. Thank them for using the service, "
-                "wish them well, and greet them nicely."
+                f"The user has confirmed they are done. Give a warm, final closing goodbye. "
+                "Keep it extremely brief and concise (under 15 words)."
             )
             reply = await _generate_dynamic_reply(prompt, category=category)
 
@@ -541,6 +540,8 @@ async def _answer_faq(state: ChatState, user_msg: str) -> dict:
             "or 'I don't have feelings'. You are always Varsapradaya's advisor.\n"
             "6. POLITENESS ALWAYS: Every response — even a refusal — must be warm, "
             "helpful, and end with an invitation to continue the conversation.\n"
+            "7. BE CONCISE: Keep your answers extremely short, direct, and concise (maximum 2-3 sentences, under 60 words total). "
+            "Do not write long explanations or repeat yourself.\n"
         )
 
         if context and context.strip():
