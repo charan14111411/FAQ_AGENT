@@ -584,6 +584,8 @@ async def _answer_faq(state: ChatState, user_msg: str) -> dict:
             "helpful, and end with an invitation to continue the conversation.\n"
             "7. BE CONCISE: Keep your answers extremely short, direct, and concise (maximum 2-3 sentences, under 60 words total). "
             "Do not write long explanations or repeat yourself.\n"
+            f"8. ROLES: The user is an external {category.upper()} (e.g. farmer, investor, or partner). You are their advisor/guide representing Varsapradaya. "
+            "Never tell the user that they are the Advisor or that they represent Varsapradaya. They are the client, and you are the Advisor.\n"
         )
 
         if context and context.strip():
