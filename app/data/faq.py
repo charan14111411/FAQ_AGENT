@@ -205,5 +205,11 @@ FAQ = [
         "category": "corporate",
         "question": "What is the minimum order quantity to become an authorized reseller?",
         "answer": "We have a low-barrier Pilot Partner program for your first five estates, allowing you to prove the value to your market before committing to larger inventory."
+    },     # Under any category or at the end of the list:
+    {
+        "category": "exploring",
+        "question": "What is the contact email address and phone number?",
+        "answer": "You can contact our support team via email at contact@varsapradaya.com or call us directly at +91 98765 43210."
     }
+
 ]

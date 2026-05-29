@@ -260,7 +260,7 @@ async def collect_phone_node(state: ChatState) -> dict:
 
     prompt = (
         "The user just provided their phone number successfully. "
-        "Warmly acknowledge it, then ask for their email address. "
+        "Warmly acknowledge it, then ask for their ema address. "
         "Keep the response extremely brief and concise (under 15 words)."
     )
     reply = await _generate_dynamic_reply(prompt, category=category)
@@ -395,7 +395,8 @@ async def _process_email_and_start_chat(state: ChatState, email: str, category: 
 async def chat_node(state: ChatState) -> dict:
     """
     Main FAQ answering node. Runs for every message after onboarding.
-    - Detects farewell intent using LLM classification.
+    - Loads recent history context from database.
+    - Runs a pure context-aware LLM classifier to detect farewell/closing intent.
     - Ask politely if they need any more help (2 times).
     - On the 3rd confirmation, ends session in DB, replies with dynamic goodbye.
     - Otherwise, resets attempts counter and runs the full RAG FAQ pipeline.
@@ -403,51 +404,84 @@ async def chat_node(state: ChatState) -> dict:
     user_msg = state["user_input"]
     category = state.get("category", "exploring")
     current_attempts = state.get("farewell_attempts", 0)
+    session_id = state.get("session_id")
 
-    # ── Farewell detection via LLM ──
+    # 1. Fetch recent history from the database to build conversation context
+    history_context = ""
+    if session_id:
+        try:
+            async with AsyncSessionLocal() as db:
+                history = await get_last_10_messages(db, session_id)
+                context_msgs = []
+                for msg in history[-3:]:
+                    role = msg["role"]
+                    content = msg["content"]
+                    context_msgs.append(f"{role.upper()}: {content}")
+                if context_msgs:
+                    history_context = "CONVERSATION HISTORY:\n" + "\n".join(context_msgs) + "\n\n"
+        except Exception as e:
+            logger.error(f"Failed to load history context for classifier: {e}")
+
+    # 2. Pure context-aware LLM Intent Classification
+    context_prompt = ""
+    if current_attempts > 0:
+        context_prompt = (
+            "CONTEXT: The user is replying to the assistant's previous message in the conversation history.\n"
+            "If the user responds by saying they do not need more help (e.g. 'no', 'nothing', 'no thanks', 'nope'), "
+            "or acknowledges the end (e.g. 'ok', 'okay', 'that is all', 'ok bye'), classify as 'END'.\n"
+            "If the user asks a new question or wants to continue, classify as 'CONTINUE'.\n\n"
+        )
+
     classify_messages = [
         {
             "role": "system",
             "content": (
                 "You are an intent classification assistant for Varsapradaya.\n"
-                "Determine if the user's message indicates they want to end the conversation, "
-                "say goodbye, finish, or close the chat.\n\n"
-                "Examples of ending/farewell intent:\n"
-                "- 'bye'\n"
-                "- 'goodbye'\n"
-                "- 'no, that's all'\n"
-                "- 'thanks, i am done'\n"
-                "- 'nothing else, thank you'\n"
-                "- 'exit'\n"
-                "- 'no'\n"
-                "- 'no, thank you'\n\n"
-                "Examples of NOT ending/farewell intent (asking a question, continuing, saying yes, etc.):\n"
-                "- 'how do i plant crops?'\n"
-                "- 'what is the cost?'\n"
-                "- 'yes, i have another question'\n"
-                "- 'hello'\n"
-                "- 'can you tell me more?'\n\n"
-                "Reply with EXACTLY 'YES' if they want to end/say goodbye, or 'NO' if they want to continue/ask a question. Nothing else."
+                "Determine if the user's latest message indicates they want to end the conversation, "
+                "say goodbye, close the chat, or decline further assistance.\n\n"
+                f"{context_prompt}"
+                "Classification Guidelines:\n"
+                "- Reply 'END' if the user's input represents a goodbye, final closure, decline of help, or a simple acknowledgment/agreement "
+                "without a new question (e.g. 'bye', 'exit', 'no', 'nothing', 'okay', 'ok', 'sure', 'ok sure', 'no thank you').\n"
+                "- Reply 'CONTINUE' if they ask a new question, raise a new topic, or explicitly say 'yes' to wanting more help.\n\n"
+                "Analyze the user's message in the context of this history:\n"
+                f"{history_context}"
+                "Reply with EXACTLY 'END' or 'CONTINUE'. Do not include any other words."
             ),
         },
-        {"role": "user", "content": user_msg},
+        {"role": "user", "content": f"User's latest message: '{user_msg}'"}
     ]
 
     classify_result = await _call_llm(classify_messages, max_tokens=10, temperature=0.0)
-    is_farewell = "YES" in classify_result["reply"].upper()
+    is_farewell = "END" in classify_result["reply"].upper()
 
     if is_farewell:
         new_attempts = current_attempts + 1
 
         if new_attempts < 3:
             # We ask politely (up to 2 times).
-            # The prompt instructs the agent to politely ask if there is anything else they can help with.
-            prompt = (
-                f"The user wants to end the conversation (attempt {new_attempts}). "
-                "Politely and warmly ask if there is anything else you can help them with. "
-                "Keep it extremely brief and concise (under 15 words)."
-            )
+            if new_attempts == 1:
+                prompt = (
+                    "The user wants to end the conversation. Warmly tell them they can feel free to ask questions "
+                    "whenever they need help in the future, then ask if there is anything else you can do for them right now. "
+                    "Keep it extremely brief, warm, and concise (under 20 words)."
+                )
+            else: # new_attempts == 2
+                prompt = (
+                    "The user is confirming a second time that they want to close. Acknowledge this with a very brief, "
+                    "warm, and polite check to see if there is one final thing you can do before wrapping up. "
+                    "Keep it distinct from before and under 15 words."
+                )
             reply = await _generate_dynamic_reply(prompt, category=category)
+
+            # Persist user's message and assistant's reply to DB
+            if session_id:
+                try:
+                    async with AsyncSessionLocal() as db:
+                        await save_message(db, session_id, "user", user_msg)
+                        await save_message(db, session_id, "assistant", reply)
+                except Exception as e:
+                    logger.error(f"Failed to save farewell messages to DB: {e}")
 
             return {
                 "reply": reply,
@@ -457,7 +491,6 @@ async def chat_node(state: ChatState) -> dict:
             }
         else:
             # 3rd attempt: end session
-            session_id = state.get("session_id")
             if session_id:
                 from app.db import AsyncSessionLocal, end_session as db_end_session
                 try:
@@ -476,6 +509,15 @@ async def chat_node(state: ChatState) -> dict:
                 "Keep it extremely brief and concise (under 15 words)."
             )
             reply = await _generate_dynamic_reply(prompt, category=category)
+
+            # Persist user's message and final reply to DB
+            if session_id:
+                try:
+                    async with AsyncSessionLocal() as db:
+                        await save_message(db, session_id, "user", user_msg)
+                        await save_message(db, session_id, "assistant", reply)
+                except Exception as e:
+                    logger.error(f"Failed to save final goodbye to DB: {e}")
 
             return {
                 "reply": reply,
