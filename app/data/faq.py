@@ -51,7 +51,7 @@ FAQ = [
         "answer": "Yes. We use Plantation-Ready radio signals that are specially designed to pass through thick leaves and branches where GPS or Wi-Fi usually fails."
     },
 
-    # CORPORATE CATEGORY
+    # CORPORATE CATEGORY (executives, compliance, supply-chain, AND reseller/agritech partners)
     {
         "category": "corporate",
         "question": "How does the platform ensure we stay ahead of EUDR and other global regulations?",
@@ -155,55 +155,61 @@ FAQ = [
         "answer": "We maintain a lean capital-efficient operation. Our current funding supports our 2026 milestones including the rollout of our next-gen MicroClime sensors."
     },
 
-    # AGRITECH CATEGORY
+    # CORPORATE / RESELLER TECHNOLOGY (partner portal, hardware specs, reseller program)
     {
-        "category": "agritech",
+        "category": "corporate",
         "question": "What makes your hardware specifically plantation-grade?",
         "answer": "Most sensors are built for flat open farms. Ours are ruggedized for 40-degree slopes, 3000mm annual rainfall, and dense canopy interference typical of coffee and tea estates."
     },
     {
-        "category": "agritech",
+        "category": "corporate",
         "question": "How do we manage the devices we sell to our customers?",
         "answer": "You get access to a Partner Portal where you can remotely monitor device health, battery levels, and connectivity status for all your clients in one place."
     },
     {
-        "category": "agritech",
+        "category": "corporate",
         "question": "What is the hardware expected lifespan in tropical conditions?",
         "answer": "Our devices are built to last 5 to 7 years. They feature UV-resistant casing, IP67 waterproofing, and high-quality solar panels designed for low-light canopy environments."
     },
     {
-        "category": "agritech",
+        "category": "corporate",
         "question": "Is there a subscription model for the software and do we get a cut?",
         "answer": "Yes. We offer a recurring revenue model. As a partner you earn on the initial hardware sale and a percentage of the annual software subscription for every active user."
     },
     {
-        "category": "agritech",
+        "category": "corporate",
         "question": "Can your sensors integrate with third-party irrigation or spray systems?",
         "answer": "Yes. We support standard protocols like MQTT and Modbus, allowing our sensors to trigger smart irrigation or automated sprayers based on real-time data."
     },
     {
-        "category": "agritech",
+        "category": "corporate",
         "question": "What kind of marketing support do you provide to your resellers?",
         "answer": "We provide co-branded brochures, case studies from similar climates, and technical whitepapers to help your sales team close deals with confidence."
     },
     {
-        "category": "agritech",
+        "category": "corporate",
         "question": "How do you handle hardware failures or warranty claims?",
         "answer": "We offer a 12-month no-hassle replacement warranty and provide your technical team with a troubleshooting kit for quick on-site fixes."
     },
     {
-        "category": "agritech",
+        "category": "corporate",
         "question": "Can we customize the software interface with our own branding?",
         "answer": "We offer Tier 1 partners the ability to white-label the FarmFuture dashboard, putting your brand front and center for your customers."
     },
     {
-        "category": "agritech",
+        "category": "corporate",
         "question": "What training is available for our field technicians?",
         "answer": "We provide an online certification course and quarterly live workshops to keep your team updated on the latest AI features and installation best practices."
     },
     {
-        "category": "agritech",
+        "category": "corporate",
         "question": "What is the minimum order quantity to become an authorized reseller?",
         "answer": "We have a low-barrier Pilot Partner program for your first five estates, allowing you to prove the value to your market before committing to larger inventory."
+    },     # Under any category or at the end of the list:
+    {
+        "category": "exploring",
+        "question": "What is the contact email address and phone number?",
+        "answer": "You can contact our support team via email at contact@varsapradaya.com or call us directly at +91 98765 43210."
     }
+
 ]

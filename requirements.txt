@@ -9,3 +9,6 @@ python-dotenv
 pydantic-settings
 sentence-transformers
 langgraph
+langgraph-checkpoint-postgres
+psycopg[binary]
+psycopg[async]
