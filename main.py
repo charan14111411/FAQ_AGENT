@@ -12,7 +12,7 @@ if sys.platform == "win32":
 from app.config import settings
 from app.logger import get_logger
 from app.db import engine
-from app.routes import chat, health
+from app.routes import chat, health, prospect
 from app.agents.graph import faq_graph_builder
 
 logger = get_logger()
@@ -83,3 +83,4 @@ app.add_middleware(
 
 app.include_router(chat.router,   prefix="/api", tags=["Chat"])
 app.include_router(health.router, prefix="/api", tags=["Health"])
+app.include_router(prospect.router, prefix="/api", tags=["Prospect"])

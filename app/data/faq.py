@@ -210,6 +210,36 @@ FAQ = [
         "category": "exploring",
         "question": "What is the contact email address and phone number?",
         "answer": "You can contact our support team via email at contact@varsapradaya.com or call us directly at +91 98765 43210."
+    },
+    {
+        "category": "exploring",
+        "question": "Where is Varsapradaya located?",
+        "answer": "Varsapradaya is headquartered in Mysore, India. Our Innovation Center there serves as our hub for R&D in IoT and AI, located close to major coffee and spice regions with access to great engineering talent."
+    },
+    {
+        "category": "exploring",
+        "question": "Where is Varsapradaya situated or based?",
+        "answer": "Varsapradaya is based in Mysore, India. Our Innovation Center in Mysore is our R&D hub for IoT and AI development, perfectly positioned near major coffee and spice growing regions."
+    },
+    {
+        "category": "exploring",
+        "question": "What is Varsapradaya's office location or address?",
+        "answer": "Our Innovation Center is located in Mysore, India. It is our primary hub for research and development in IoT and AI technologies for the agritech sector."
+    },
+    {
+        "category": "exploring",
+        "question": "How can I invest in Varsapradaya or become an investor?",
+        "answer": "We welcome investor interest! Please reach out to our team directly at contact@varsapradaya.com or call +91 98765 43210 to learn about investment opportunities and our growth roadmap."
+    },
+    {
+        "category": "exploring",
+        "question": "What does Varsapradaya do and what is it about?",
+        "answer": "Varsapradaya is a precision agritech company focused on high-value plantation crops like coffee, tea, cocoa, and spices. We provide IoT sensor networks, AI-driven farm analytics, and the FarmFuture data platform to help growers, corporates, and investors make smarter decisions."
+    },
+    {
+        "category": "exploring",
+        "question": "How do I get started with Varsapradaya or sign up?",
+        "answer": "You can reach out to our team at contact@varsapradaya.com or call +91 98765 43210. We will connect you with the right advisor based on whether you are a grower, a corporate partner, or an investor."
     }
 
 ]
