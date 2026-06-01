@@ -29,6 +29,16 @@ async def find_user_by_email(db: AsyncSession, email: str):
     result = await db.execute(text(query), {"email": email})
     return result.fetchone()
 
+async def find_user_by_phone(db: AsyncSession, phone: str):
+    query = "SELECT id, name, phone, email, created_at, updated_at FROM users WHERE phone = :phone LIMIT 1"
+    result = await db.execute(text(query), {"phone": phone})
+    return result.fetchone()
+
+async def update_user_name(db: AsyncSession, user_id, new_name: str):
+    query = "UPDATE users SET name = :name, updated_at = NOW() WHERE id = :user_id"
+    await db.execute(text(query), {"name": new_name, "user_id": user_id})
+    await db.commit()
+
 async def create_user(db: AsyncSession, name: str, email: str, phone: str = None):
     query = """
         INSERT INTO users (name, phone, email)

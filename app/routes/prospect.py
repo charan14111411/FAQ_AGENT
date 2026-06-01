@@ -59,6 +59,9 @@ async def get_prospect_conversations(prospect_id: str):
         # Build response matching the requested structure
         response_data: Dict[str, Any] = {
             "prospect id": prospect_id,
+            "username": user_name,
+            "phone number": user_phone,
+            "email": user_email,
             "total_sessions": len(all_sessions),
         }
 
@@ -70,7 +73,7 @@ async def get_prospect_conversations(prospect_id: str):
 
             msgs_rows = await db.execute(
                 text("""
-                    SELECT role, content
+                    SELECT role, content, created_at
                     FROM messages
                     WHERE session_id = :sid
                     ORDER BY created_at ASC
@@ -78,21 +81,40 @@ async def get_prospect_conversations(prospect_id: str):
                 {"sid": session_id},
             )
             
-            conversation_lines = []
-            for r in msgs_rows.fetchall():
-                # Map role to user or ai as requested
+            conversation_data = []
+            rows = msgs_rows.fetchall()
+            current_pair = {}
+            for r in rows:
                 role_str = "user" if r[0] == "user" else "ai"
-                conversation_lines.append(f"{role_str}: {r[1]}")
+                time_str = r[2].strftime("%Y-%m-%d %H:%M:%S") if r[2] else ""
+                
+                # If we encounter a new user message but already have one in the active pair,
+                # push the incomplete pair first
+                if role_str == "user" and "user" in current_pair:
+                    conversation_data.append(current_pair)
+                    current_pair = {}
+                
+                current_pair[role_str] = {
+                    "message": r[1],
+                    "time stamp": time_str
+                }
+                
+                # Once we have both user and AI parts of the turn, push and reset
+                if "user" in current_pair and "ai" in current_pair:
+                    conversation_data.append(current_pair)
+                    current_pair = {}
+            
+            # Push any trailing messages
+            if current_pair:
+                conversation_data.append(current_pair)
 
             session_key = f"session{i}"
             response_data[session_key] = {
-                "username": user_name,
-                "phone number": user_phone,
-                "email": user_email,
+                "session id": session_id,
                 "category": sess[1],
                 "started_at": started_at,
                 "ended_at": ended_at,
-                "conversation": conversation_lines,
+                "conversation": conversation_data,
             }
 
         logger.info(

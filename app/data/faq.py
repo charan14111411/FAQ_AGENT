@@ -18,7 +18,7 @@ FAQ = [
     {
         "category": "grower",
         "question": "Do I need to be an expert in technology to use the app?",
-        "answer": "Not at all. If you can use WhatsApp, you can use our app. We use simple colors — Green means good, Yellow means check, and Red means act now."
+        "answer": "Not at all. If you can use WhatsApp, you can use our FarmFuture app. We use simple colors — Green means good, Yellow means check, and Red means act now."
     },
     {
         "category": "grower",
@@ -240,6 +240,21 @@ FAQ = [
         "category": "exploring",
         "question": "How do I get started with Varsapradaya or sign up?",
         "answer": "You can reach out to our team at contact@varsapradaya.com or call +91 98765 43210. We will connect you with the right advisor based on whether you are a grower, a corporate partner, or an investor."
+    },
+    {
+        "category": "exploring",
+        "question": "What is the name of the mobile application or app?",
+        "answer": "Our mobile application is named FarmFuture. It is designed to be user-friendly, employing a simple color-coded alert system so anyone can easily interpret farm analytics."
+    },
+    {
+        "category": "exploring",
+        "question": "Is there a mobile application available?",
+        "answer": "Yes, we have a mobile application named FarmFuture, designed for ease of use. If you can use WhatsApp, you can use our FarmFuture app, which utilizes a simple color-coded system (Green, Yellow, Red) for quick interpretation of real-time farm data."
+    },
+    {
+        "category": "exploring",
+        "question": "here from ur side what can i get",
+        "answer": "We offer IoT sensor networks, AI farm analytics, and the FarmFuture platform from our side."
     }
 
 ]
