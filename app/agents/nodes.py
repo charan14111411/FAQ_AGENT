@@ -15,6 +15,8 @@ from app.db import (
     end_session,
     update_session_prospect_id,
     get_prospect_id_for_user,
+    find_user_by_phone,
+    update_user_name,
 )
 from app.services.crm import create_crm_prospect
 from app.logger import get_logger
@@ -219,7 +221,7 @@ async def collect_name_node(state: ChatState) -> dict:
 
     prompt = (
         f"The user just shared their name: {name}. "
-        "Greet them warmly by name, then ask for their phone number for account setup. "
+        "Greet them warmly by name, then ask for their mobile number for further collaboration. "
         "Keep the entire response extremely short and concise (under 20 words)."
     )
     reply = await _generate_dynamic_reply(prompt, category=category)
@@ -249,17 +251,83 @@ async def collect_phone_node(state: ChatState) -> dict:
     if not re.match(PHONE_REGEX, raw):
         # Check if the user is asking a question or trying to chat instead of providing a phone number
         prompt = (
-            f"The user was asked for their phone number to complete account setup, but instead they said: '{raw}'.\n"
+            f"The user was asked for their mobile number for further collaboration, but instead they said: '{raw}'.\n"
             f"Context: We already know their name is '{state.get('name')}' and their selected role is '{category}'.\n"
             "If they are asking a question (e.g. 'what is my name', 'who are you', 'what is varsapradaya') or trying to chat, "
             "directly answer their question warmly using the context. Then, politely explain that they still need to "
-            "provide their phone number to finish setting up their account and start chatting.\n"
+            "provide their mobile number for further collaboration and start chatting.\n"
             "If they are just typing a bad phone number, typing nonsense, or mashing the keyboard, "
-            "politely point out it doesn't look like a valid phone number and ask them to try again (e.g., +91 9876543210 format)."
+            "politely point out it doesn't look like a valid mobile number and ask them to try again (e.g., +91 9876543210 format)."
         )
         reply = await _generate_dynamic_reply(prompt, user_input=raw, category=category)
         return {"reply": reply, "step": "await_phone", "phone_attempts": attempts}
 
+    # ── VALID PHONE NUMBER ──
+    # Check if this phone number already exists in the database
+    async with AsyncSessionLocal() as db:
+        existing_user = await find_user_by_phone(db, raw)
+        
+        if existing_user:
+            # --- RETURNING USER (Found by Phone) ---
+            user_id = str(existing_user[0])
+            db_name = existing_user[1]
+            email = existing_user[3]
+            
+            # If the user entered a different name in this session, update it in the database
+            input_name = state.get("name")
+            if input_name and input_name.strip().title() != db_name:
+                cleaned_name = input_name.strip().title()
+                await update_user_name(db, user_id, cleaned_name)
+                db_name = cleaned_name
+                logger.info(f"Updated user name from '{existing_user[1]}' to '{cleaned_name}' for user_id={user_id}")
+
+            # Create session directly
+            session = await create_session(db, user_id, category, is_returning=True)
+            session_id = str(session.id)
+
+            await write_log(
+                db, "INFO", "user_returning",
+                f"Returning user (via phone): {email or 'None'}, today's category: {category}",
+                user_id=existing_user[0],
+                meta={"category": category}
+            )
+
+            # CRM integration
+            prospect_id = await create_crm_prospect(name=db_name, mobile=raw)
+            if prospect_id == "DUPLICATE":
+                prospect_id = await get_prospect_id_for_user(db, user_id)
+            if prospect_id and prospect_id != "DUPLICATE":
+                try:
+                    await update_session_prospect_id(db, session_id, prospect_id)
+                except Exception as crm_err:
+                    logger.warning(f"Could not save prospect_id to session: {crm_err}")
+
+            # Welcome back reply
+            prompt = (
+                f"Welcome back the returning user whose name is {db_name}. "
+                f"They are now engaging as a {category} audience member. "
+                "Keep the welcome warm but extremely short (under 15 words). "
+                "Ask what you can help with today."
+            )
+            reply = await _generate_dynamic_reply(prompt, category=category)
+
+            return {
+                "phone": raw,
+                "email": email,
+                "user_id": user_id,
+                "session_id": session_id,
+                "name": db_name,
+                "is_returning": True,
+                "reply": reply,
+                "step": "chatting",
+                "agent_name": f"{category}_agent",
+                "phone_attempts": 0,
+                "email_attempts": 0,
+                "farewell_attempts": 0,
+            }
+
+    # --- NEW USER ---
+    # Ask for email to register
     prompt = (
         "The user just provided their phone number successfully. "
         "Warmly acknowledge it, then ask for their email address. "
@@ -292,11 +360,11 @@ async def collect_email_node(state: ChatState) -> dict:
     if not re.match(EMAIL_REGEX, raw):
         # Check if the user is asking a question or trying to chat instead of providing an email
         prompt = (
-            f"The user was asked for their email address to complete account setup, but instead they said: '{raw}'.\n"
+            f"The user was asked for their email address for further collaboration, but instead they said: '{raw}'.\n"
             f"Context: We know their name is '{state.get('name')}', their phone number is '{state.get('phone')}', and their role is '{category}'.\n"
             "If they are asking a question (e.g. 'what is my name', 'what is my phone number', 'who are you', 'what is varsapradaya') or trying to chat, "
             "directly answer their question warmly using the context. Then, politely explain that they still need to "
-            "provide their email address to finish setting up their account.\n"
+            "provide their email address for further collaboration.\n"
             "If they are just typing an invalid email format or typing nonsense, "
             "politely point out it doesn't look like a valid email and ask them to try again (e.g., yourname@example.com)."
         )
