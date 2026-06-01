@@ -65,6 +65,32 @@ async def end_session(db: AsyncSession, session_id):
     await db.execute(text(query), {"session_id": session_id})
     await db.commit()
 
+
+async def update_session_prospect_id(db: AsyncSession, session_id, prospect_id: str):
+    """Stores the CRM prospectID returned by BusinessCentral onto the session row."""
+    query = "UPDATE sessions SET prospect_id = :prospect_id WHERE id = :session_id"
+    await db.execute(text(query), {"session_id": session_id, "prospect_id": prospect_id})
+    await db.commit()
+
+
+async def get_prospect_id_for_user(db: AsyncSession, user_id) -> str | None:
+    """
+    Fetches the most recent prospect_id from any prior session of the given user.
+    Used when CRM reports 'Mobile already exists' — so we reuse the existing prospectID
+    rather than leaving the current session with a null.
+    """
+    query = """
+        SELECT prospect_id FROM sessions
+        WHERE user_id = :user_id
+          AND prospect_id IS NOT NULL
+        ORDER BY started_at DESC
+        LIMIT 1
+    """
+    result = await db.execute(text(query), {"user_id": user_id})
+    row = result.fetchone()
+    return row[0] if row else None
+
+
 async def save_message(db: AsyncSession, session_id, role: str, content: str):
     query = """
         INSERT INTO messages (session_id, role, content)

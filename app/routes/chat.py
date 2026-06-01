@@ -37,35 +37,23 @@ async def handle_chat(req: ChatRequest, request: Request):
             )
 
 
-        # Global Agentic Content Moderation (Prevents Groq API Safety Filter from crashing the app)
-        from app.agents.base_agent import _call_llm
-        moderation_prompt = "You are a content moderation bot. Analyze the user message. If it contains severe profanity, insults, or highly offensive language, reply EXACTLY with 'TOXIC'. Otherwise reply 'SAFE'."
-        try:
-            mod_messages = [{"role": "system", "content": moderation_prompt}, {"role": "user", "content": req.message}]
-            mod_result = await _call_llm(mod_messages, max_tokens=10, temperature=0.0)
-            
-            # If Groq throws a safety error, _call_llm returns the 'error_fallback' model instead of raising.
-            if mod_result.get("model") == "error_fallback":
-                is_toxic = True
-            else:
-                is_toxic = "TOXIC" in mod_result.get("reply", "").upper()
-                
-        except Exception:
-            is_toxic = True
+        # ── Fast regex content moderation (replaces LLM call, saves 2-5 sec per turn) ──
+        # Covers severe profanity, slurs, and hostile patterns. ~0ms.
+        import re as _re
+        _TOXIC_PATTERN = _re.compile(
+            r"\b(fuck|shit|ass(?:hole)?|bitch|bastard|cunt|dick|cock|pussy|whore|"
+            r"nigger|nigga|faggot|retard|idiot|moron|stupid|hate you|kill you|"
+            r"die|go to hell|wtf|stfu|shut up)\b",
+            _re.IGNORECASE,
+        )
+        is_toxic = bool(_TOXIC_PATTERN.search(req.message))
 
         if is_toxic:
             agent_name = state_snapshot.values.get("agent_name") if state_snapshot and state_snapshot.values else None
-            
-            # Dynamic LLM generation for profanity response (Zero Hardcoding)
             from app.agents.nodes import _generate_dynamic_reply
             prompt = "The user just used severe profanity or hostile language. Politely but firmly tell them that professional language is required to continue our conversation. Keep it to one sentence."
             toxic_reply = await _generate_dynamic_reply(prompt)
-            
-            return ChatResponse(
-                reply=toxic_reply,
-                step=current_step,
-                agent=agent_name
-            )
+            return ChatResponse(reply=toxic_reply, step=current_step, agent=agent_name)
 
         # Build the input — inject user_input and current step
         graph_input = {
