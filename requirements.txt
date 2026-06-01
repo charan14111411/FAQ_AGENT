@@ -12,3 +12,4 @@ langgraph
 langgraph-checkpoint-postgres
 psycopg[binary]
 psycopg[async]
+google-genai>=2.7.0

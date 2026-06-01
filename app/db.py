@@ -8,7 +8,12 @@ from app.logger import get_logger
 
 logger = get_logger()
 
-engine = create_async_engine(settings.DATABASE_URL, echo=False)
+engine = create_async_engine(
+    settings.DATABASE_URL,
+    echo=False,
+    pool_size=20,
+    max_overflow=15
+)
 AsyncSessionLocal = sessionmaker(
     bind=engine,
     class_=AsyncSession,
