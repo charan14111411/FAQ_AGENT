@@ -31,7 +31,7 @@ def build_graph_builder():
     """
     builder = StateGraph(ChatState)
 
-    # Register nodes
+    # Register nodes for each step in the conversation
     builder.add_node("start",       classify_entry_node)
     builder.add_node("await_name",  collect_name_node)
     builder.add_node("await_phone", collect_phone_node)
