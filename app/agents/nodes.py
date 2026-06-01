@@ -12,6 +12,7 @@ from app.db import (
     get_last_10_messages,
     write_log,
     AsyncSessionLocal,
+    end_session,
 )
 from app.logger import get_logger
 
@@ -345,6 +346,7 @@ async def _process_email_and_start_chat(state: ChatState, email: str, category: 
                 "user_id": user_id,
                 "session_id": session_id,
                 "name": name,
+                "phone": existing_user.phone,
                 "is_returning": True,
                 "reply": reply,
                 "step": "chatting",
@@ -418,7 +420,7 @@ async def chat_node(state: ChatState) -> dict:
                     content = msg["content"]
                     context_msgs.append(f"{role.upper()}: {content}")
                 if context_msgs:
-                    history_context = "CONVERSATION HISTORY:\n" + "\n".join(context_msgs) + "\n\n"
+                    history_context = "RECENT MESSAGES:\n" + "\n".join(context_msgs) + "\n\n"
         except Exception as e:
             logger.error(f"Failed to load history context for classifier: {e}")
 
@@ -492,10 +494,9 @@ async def chat_node(state: ChatState) -> dict:
         else:
             # 3rd attempt: end session
             if session_id:
-                from app.db import AsyncSessionLocal, end_session as db_end_session
                 try:
                     async with AsyncSessionLocal() as db:
-                        await db_end_session(db, session_id)
+                        await end_session(db, session_id)
                     logger.info(
                         f"Session ended via farewell: {session_id}",
                         extra={"event": "session_ended"}
@@ -551,8 +552,9 @@ async def _answer_faq(state: ChatState, user_msg: str) -> dict:
         # 1. Persist user message
         await save_message(db, state["session_id"], "user", user_msg)
 
-        # 2. Conversation history
+        # 2. Conversation history (last 5 messages for context efficiency)
         history = await get_last_10_messages(db, state["session_id"])
+        history = history[-5:]  # Trim to last 5 to reduce token load
 
         # 3. RAG retrieval
         context = await retrieve(db, user_msg, top_k=3)
@@ -560,6 +562,24 @@ async def _answer_faq(state: ChatState, user_msg: str) -> dict:
 
         # 4. Build system prompt
         system_prompt = get_persona(category)
+
+        # Inject the user's profile so the LLM can answer personal questions like
+        # "what is my name / email / phone?" — all collected during onboarding.
+        user_profile = []
+        if state.get("name"):
+            user_profile.append(f"- Name: {state['name']}")
+        if state.get("email"):
+            user_profile.append(f"- Email: {state['email']}")
+        if state.get("phone"):
+            user_profile.append(f"- Phone: {state['phone']}")
+        if category:
+            user_profile.append(f"- Category/Role: {category}")
+
+        if user_profile:
+            system_prompt += (
+                "\n\nACTIVE USER PROFILE (use this to answer questions about the user's own details):\n"
+                + "\n".join(user_profile)
+            )
 
         system_prompt += (
             "\n\nGUARDRAILS — FOLLOW THESE STRICTLY:\n"
@@ -570,7 +590,7 @@ async def _answer_faq(state: ChatState, user_msg: str) -> dict:
             "2. NO SYSTEM ACTIONS: You are a read-only informational assistant. "
             "You cannot delete accounts, reset passwords, clear conversations, or book meetings. "
             "If asked, politely explain this and suggest they contact the support team.\n"
-            "3. NO HALLUCINATION: Only use information from the context provided below. "
+            "3. NO HALLUCINATION: Only use information from the FAQ context provided below. "
             "If the answer is not in the context, say warmly: "
             "'That's a great question! I don't have the exact details on that right now — "
             "I'd encourage you to reach out to our team directly for the most accurate answer.'\n"
@@ -584,8 +604,10 @@ async def _answer_faq(state: ChatState, user_msg: str) -> dict:
             "helpful, and end with an invitation to continue the conversation.\n"
             "7. BE CONCISE: Keep your answers extremely short, direct, and concise (maximum 2-3 sentences, under 60 words total). "
             "Do not write long explanations or repeat yourself.\n"
-            f"8. ROLES: The user is an external {category.upper()} (e.g. farmer, investor, or partner). You are their advisor/guide representing Varsapradaya. "
-            "Never tell the user that they are the Advisor or that they represent Varsapradaya. They are the client, and you are the Advisor.\n"
+            f"8. ROLES: The user is an external {category.upper()} (e.g. farmer, investor, or partner). "
+            "You are their advisor/guide representing Varsapradaya. "
+            "Never tell the user that they are the Advisor or that they represent Varsapradaya. "
+            "They are the client, and you are the Advisor.\n"
         )
 
         if context and context.strip():
@@ -597,7 +619,8 @@ async def _answer_faq(state: ChatState, user_msg: str) -> dict:
         messages.append({"role": "user", "content": user_msg})
 
         # Token & temperature config per agent
-        TOKEN_LIMITS = {"grower": 500, "investor": 700, "corporate": 650, "exploring": 500}
+        # Output tokens lowered: LLM is instructed to reply in 2-3 sentences max
+        TOKEN_LIMITS = {"grower": 200, "investor": 250, "corporate": 250, "exploring": 200}
         TEMPS       = {"grower": 0.3, "investor": 0.4, "corporate": 0.3, "exploring": 0.4}
 
         # 6. LLM call

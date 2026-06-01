@@ -1,10 +1,12 @@
 from pydantic_settings import BaseSettings
+from typing import Optional
 
 class Settings(BaseSettings):
     DATABASE_URL: str
     CHECKPOINT_DB_URL: str
     GROQ_API_KEY: str
     OPENAI_API_KEY: str
+    GEMINI_API_KEY: Optional[str] = None
     LLM_PROVIDER: str = "groq"
     FRONTEND_URL: str = "http://localhost:5500"
     EMBEDDING_MODEL: str = "text-embedding-3-small"

@@ -1,3 +1,4 @@
+import asyncio
 import os
 
 from app.config import settings
@@ -35,10 +36,10 @@ def _get_local_embedding(text: str) -> list:
 async def embed_text(text: str) -> list:
     """
     Returns the 384-dimensional semantic embedding for the given text.
-    Uses SentenceTransformer locally.
+    Uses SentenceTransformer locally inside a worker thread to prevent blocking.
     """
     try:
-        return _get_local_embedding(text)
+        return await asyncio.to_thread(_get_local_embedding, text)
     except Exception as e:
         logger.error(f"Failed to generate SentenceTransformer embedding: {e}")
         raise e
