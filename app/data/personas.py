@@ -1,26 +1,8 @@
-from app.data.faq import FAQ
-
-
-def _format_faq() -> str:
-    """Format all 40 FAQs grouped by category for injection into system prompts."""
-    grouped = {}
-    for item in FAQ:
-        cat = item["category"]
-        if cat not in grouped:
-            grouped[cat] = []
-        grouped[cat].append(item)
-
-    lines = []
-    for cat, items in grouped.items():
-        lines.append(f"=== {cat.upper()} QUESTIONS ===")
-        for i, item in enumerate(items, 1):
-            lines.append(f"{i}. Q: {item['question']}")
-            lines.append(f"   A: {item['answer']}")
-        lines.append("")
-    return "\n".join(lines)
-
-
-FORMATTED_FAQ = _format_faq()
+# NOTE: The full FAQ knowledge base is intentionally NOT injected here.
+# The RAG pipeline in _answer_faq() retrieves the top-3 relevant FAQs
+# at query time and appends them to the prompt under:
+#   "MOST RELEVANT FAQ CONTEXT FOR THIS QUESTION:"
+# Injecting all 40 FAQs in every system prompt burned ~2,500-3,000 tokens per turn.
 
 # ---------------------------------------------------------------------------
 # Short persona intro lines — used during onboarding (name/phone/email steps)
@@ -64,8 +46,7 @@ PERSONAS = {
         "- Use simple, warm, encouraging language\n"
         "- Explain technical concepts using analogies (e.g., 'Green means good, Red means act now')\n"
         "- Speak like a knowledgeable neighbor, not a corporate brochure\n"
-        "- Celebrate the farmer's work and challenges with empathy\n\n"
-        f"YOUR FULL KNOWLEDGE BASE:\n{FORMATTED_FAQ}"
+        "- Celebrate the farmer's work and challenges with empathy"
     ),
 
     "investor": (
@@ -75,8 +56,7 @@ PERSONAS = {
         "- Lead with numbers, market size, and growth potential\n"
         "- Use financial and business language confidently\n"
         "- Focus on TAM, revenue model, competitive moat, and roadmap\n"
-        "- Be concise and direct — investors value time\n\n"
-        f"YOUR FULL KNOWLEDGE BASE:\n{FORMATTED_FAQ}"
+        "- Be concise and direct — investors value time"
     ),
 
     "corporate": (
@@ -88,17 +68,9 @@ PERSONAS = {
         "- Speak to both enterprise buyers AND reseller partners\n"
         "- Emphasize B2B value: reseller margins, compliance (EUDR), scalability, "
         "  brand white-labeling, and multi-estate management\n\n"
-        "CRITICAL LENS RULE — APPLIES TO ALL 40 FAQs:\n"
-        "You are always speaking to a corporate/reseller audience. "
-        "Even when answering questions about farmer sensors or investor returns, "
-        "you MUST reframe the answer through a corporate or reseller lens:\n"
-        "- Farmer/grower questions → What this means for your clients (the growers you serve), "
-        "  and how it creates value/revenue for your business\n"
-        "- Investor/market questions → How this growth story helps you pitch Varsapradaya "
-        "  to your stakeholders or expand your partnership\n"
-        "- Always connect back to: business value, reseller opportunity, "
-        "  compliance advantage, or partnership benefit\n\n"
-        f"YOUR FULL KNOWLEDGE BASE:\n{FORMATTED_FAQ}"
+        "LENS RULE: Always reframe answers through a corporate/reseller lens.\n"
+        "- Farmer questions → value for your grower-clients and your business revenue\n"
+        "- Investor questions → how this growth story helps your stakeholders or expands your partnership"
     ),
 
     "exploring": (
@@ -108,8 +80,7 @@ PERSONAS = {
         "- Be friendly, clear, and jargon-free\n"
         "- Assume no prior knowledge — explain from first principles\n"
         "- Make the platform sound exciting and accessible\n"
-        "- Invite curiosity and encourage questions\n\n"
-        f"YOUR FULL KNOWLEDGE BASE:\n{FORMATTED_FAQ}"
+        "- Invite curiosity and encourage questions"
     ),
 }
 

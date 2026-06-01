@@ -79,10 +79,10 @@ async def handle_chat(req: ChatRequest, request: Request):
 
         # --- DEBUG LOGGING ---
         print(f"\n{'='*50}")
-        print(f"🛒 LANGGRAPH MEMORY ('THE CART') FOR THREAD: {req.thread_id}")
+        print(f"[CART] LANGGRAPH MEMORY FOR THREAD: {req.thread_id}")
         for key, value in result.items():
             if key not in ["reply", "user_input"]:  # Skip long text fields to make it readable
-                print(f"  ➔ {key}: {value}")
+                print(f"  -> {key}: {value}")
         print(f"{'='*50}\n")
 
         return ChatResponse(

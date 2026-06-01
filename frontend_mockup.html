@@ -548,9 +548,27 @@
   </div>
 
   <script>
-    // ─── State ───
-    const API_BASE = 'http://localhost:8000/api';
+    // ─── State & Dynamic API Port Detection ───
+    let API_BASE = 'http://localhost:8000/api';
     const thread_id = crypto.randomUUID();
+
+    async function detectApiPort() {
+      try {
+        const res = await fetch('http://localhost:8000/api/health');
+        if (!res.ok) throw new Error();
+      } catch (err) {
+        try {
+          const res = await fetch('http://localhost:8001/api/health');
+          if (res.ok) {
+            API_BASE = 'http://localhost:8001/api';
+            console.log("Dynamic API Port Detection: Switched backend to port 8001.");
+          }
+        } catch (e) {
+          console.warn("Dynamic API Port Detection: No responsive backend found on port 8000 or 8001.");
+        }
+      }
+    }
+    detectApiPort();
     let currentAgent = null;
     let isWaiting = false;
 
