@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 import json
 import asyncpg
 from app.config import settings
@@ -40,14 +41,24 @@ async def update_user_name(db: AsyncSession, user_id, new_name: str):
     await db.commit()
 
 async def create_user(db: AsyncSession, name: str, email: str, phone: str = None):
-    query = """
-        INSERT INTO users (name, phone, email)
-        VALUES (:name, :phone, :email)
-        RETURNING id, name, phone, email, created_at, updated_at
-    """
-    result = await db.execute(text(query), {"name": name, "phone": phone, "email": email})
-    await db.commit()
-    return result.fetchone()
+    try:
+        query = """
+            INSERT INTO users (name, phone, email)
+            VALUES (:name, :phone, :email)
+            RETURNING id, name, phone, email, created_at, updated_at
+        """
+        result = await db.execute(text(query), {"name": name, "phone": phone, "email": email})
+        await db.commit()
+        return result.fetchone()
+    except IntegrityError as e:
+        await db.rollback()
+        logger.warning(
+            f"IntegrityError when creating user (phone={phone}, email={email}): {e}. "
+            "Attempting fallback to fetch existing user."
+        )
+        query = "SELECT id, name, phone, email, created_at, updated_at FROM users WHERE phone = :phone LIMIT 1"
+        result = await db.execute(text(query), {"phone": phone})
+        return result.fetchone()
 
 async def get_last_session_category(db: AsyncSession, user_id):
     query = "SELECT category FROM sessions WHERE user_id = :user_id ORDER BY started_at DESC LIMIT 1"

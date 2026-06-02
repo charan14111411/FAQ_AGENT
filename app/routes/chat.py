@@ -95,6 +95,7 @@ async def handle_chat(req: ChatRequest, request: Request, background_tasks: Back
         # Check if conversation just ended, trigger background email & followup tasks
         if result.get("step") == "ended":
             session_id = result.get("session_id")
+            user_id = result.get("user_id")
             email = result.get("email")
             phone = result.get("phone")
             name = result.get("name", "Explorer")
@@ -108,7 +109,10 @@ async def handle_chat(req: ChatRequest, request: Request, background_tasks: Back
                     name=name,
                     category=category
                 )
-                logger.info(f"Queued transcript email background task for session {session_id} to {email}")
+                logger.info(
+                    f"Queued transcript email background task for session {session_id} to {email}",
+                    extra={"session_id": session_id, "user_id": user_id}
+                )
 
             if phone:
                 background_tasks.add_task(
@@ -117,7 +121,10 @@ async def handle_chat(req: ChatRequest, request: Request, background_tasks: Back
                     name=name,
                     session_id=session_id
                 )
-                logger.info(f"Queued post-chat followup background task for session {session_id} to {phone}")
+                logger.info(
+                    f"Queued post-chat followup background task for session {session_id} to {phone}",
+                    extra={"session_id": session_id, "user_id": user_id}
+                )
 
         return ChatResponse(
             reply=result.get("reply", ""),

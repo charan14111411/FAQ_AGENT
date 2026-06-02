@@ -3,6 +3,10 @@ from app.config import settings
 from groq import AsyncGroq
 from openai import AsyncOpenAI
 
+_groq_client = None
+_openai_client = None
+_gemini_client = None
+
 
 async def _call_llm(messages: list, max_tokens: int, temperature: float) -> dict:
     """
@@ -11,11 +15,14 @@ async def _call_llm(messages: list, max_tokens: int, temperature: float) -> dict
     Returns: { reply, input_tokens, output_tokens, model }
     On error: returns a safe fallback dict instead of raising.
     """
+    global _groq_client, _openai_client, _gemini_client
     provider = settings.LLM_PROVIDER.lower()
 
     try:
         if provider == "groq":
-            client = AsyncGroq(api_key=settings.GROQ_API_KEY)
+            if _groq_client is None:
+                _groq_client = AsyncGroq(api_key=settings.GROQ_API_KEY)
+            client = _groq_client
             model = "llama-3.3-70b-versatile"
             response = await client.chat.completions.create(
                 model=model,
@@ -28,7 +35,9 @@ async def _call_llm(messages: list, max_tokens: int, temperature: float) -> dict
             output_tokens = response.usage.completion_tokens
 
         elif provider == "openai":
-            client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+            if _openai_client is None:
+                _openai_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+            client = _openai_client
             model = "gpt-4o-mini"
             response = await client.chat.completions.create(
                 model=model,
@@ -44,19 +53,21 @@ async def _call_llm(messages: list, max_tokens: int, temperature: float) -> dict
             from google import genai
             from google.genai import types
 
-            credentials_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "varsapradaya-credentials.json")
-            if os.path.exists(credentials_path):
-                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
-                client = genai.Client(vertexai=True, project="varsapradaya", location="us-central1")
-            else:
-                api_key = settings.GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY")
-                if not api_key:
-                    raise ValueError(
-                        "No Gemini API key or Google Application Credentials was provided. "
-                        "Please pass a valid API key via GEMINI_API_KEY in your .env file or place "
-                        "varsapradaya-credentials.json in the project root."
-                    )
-                client = genai.Client(api_key=api_key)
+            if _gemini_client is None:
+                credentials_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "varsapradaya-credentials.json")
+                if os.path.exists(credentials_path):
+                    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
+                    _gemini_client = genai.Client(vertexai=True, project="varsapradaya", location="us-central1")
+                else:
+                    api_key = settings.GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY")
+                    if not api_key:
+                        raise ValueError(
+                            "No Gemini API key or Google Application Credentials was provided. "
+                            "Please pass a valid API key via GEMINI_API_KEY in your .env file or place "
+                            "varsapradaya-credentials.json in the project root."
+                        )
+                    _gemini_client = genai.Client(api_key=api_key)
+            client = _gemini_client
 
             model = "gemini-2.5-flash"
 

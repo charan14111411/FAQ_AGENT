@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     LLM_PROVIDER: str = "groq"
     FRONTEND_URL: str = "http://localhost:5500"
     EMBEDDING_MODEL: str = "text-embedding-3-small"
+    SESSION_TIMEOUT_MINUTES: int = 30
 
     class Config:
         env_file = ".env"

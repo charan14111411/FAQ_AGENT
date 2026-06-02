@@ -10,12 +10,14 @@ async def retrieve(db, user_message: str, top_k: int = 3) -> str:
         embedding_str = f"[{','.join(str(x) for x in embedding)}]"
         
         try:
-            # Only return FAQs with cosine distance <= 0.70 (threshold for semantic relevance).
+            # Only return FAQs with cosine distance <= 0.76 (threshold for semantic relevance).
             # pgvector <=> returns cosine distance: 0 = identical, 2 = opposite.
-            # Without this filter, poor matches get injected and the LLM says "I don't have details".
+            # Raised from 0.70 to 0.76 to handle informal/colloquial phrasings (e.g. "how could u help me")
+            # which drift slightly in embedding space vs formal FAQ text.
+            # Genuinely off-topic queries (math, cooking, politics) score 0.85+ and are blocked by the LLM guardrail.
             query = (
                 "SELECT question, answer FROM faq_embeddings "
-                "WHERE embedding <=> CAST(:embedding AS vector) <= 0.70 "
+                "WHERE embedding <=> CAST(:embedding AS vector) <= 0.76 "
                 "ORDER BY embedding <=> CAST(:embedding AS vector) "
                 "LIMIT :limit"
             )
