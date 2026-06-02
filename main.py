@@ -98,3 +98,5 @@ app.add_middleware(
 app.include_router(chat.router,   prefix="/api", tags=["Chat"])
 app.include_router(health.router, prefix="/api", tags=["Health"])
 app.include_router(prospect.router, prefix="/api", tags=["Prospect"])
+# Also include prospect router without prefix to support direct access at root level (e.g. /fetch_prospect/...)
+app.include_router(prospect.router, tags=["Prospect"])

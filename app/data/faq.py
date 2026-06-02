@@ -106,8 +106,13 @@ FAQ = [
     # INVESTOR CATEGORY
     {
         "category": "investor",
-        "question": "What is the total addressable market for plantation-specific agritech?",
-        "answer": "While general agritech is crowded, the High-Value Plantation sector covering Coffee, Tea, Cocoa, and Spices is underserved and worth over $25B globally in technology potential."
+        "question": "What is the Total Addressable Market (TAM) for plantation-specific agritech?",
+        "answer": "While general agritech is crowded, the Total Addressable Market (TAM) for the High-Value Plantation sector covering Coffee, Tea, Cocoa, and Spices is underserved and worth over $25B globally in technology potential."
+    },
+    {
+        "category": "investor",
+        "question": "What is TAM or Total Addressable Market?",
+        "answer": "TAM stands for Total Addressable Market. For Varsapradaya's high-value plantation agritech, the global TAM is estimated to be over $25 Billion across the coffee, tea, cocoa, and spice sectors."
     },
     {
         "category": "investor",
@@ -345,6 +350,53 @@ FAQ = [
         "category": "investor",
         "question": "What is my role as an investor?",
         "answer": "As an investor, your role is to evaluate Varsapradaya as an agritech opportunity. We provide you with market data, our revenue model, growth roadmap, and IP details to help you make an informed decision."
+    },
+
+    # SOIL & NPK CATEGORY
+    {
+        "category": "grower",
+        "question": "What is NPK and why does it matter for my plantation?",
+        "answer": "NPK stands for Nitrogen (N), Phosphorus (P), and Potassium (K) — the three key nutrients every plant needs to grow. Our sensors monitor soil NPK levels in real time so you know exactly when and how much to fertilize, saving costs and improving yield."
+    },
+    {
+        "category": "grower",
+        "question": "What is n,p,k values in soil?",
+        "answer": "N, P, and K refer to Nitrogen, Phosphorus, and Potassium — the primary macronutrients in soil. Nitrogen drives leaf growth, Phosphorus supports root development and flowering, and Potassium strengthens the plant's overall health. Our MicroClime sensors track these soil nutrient levels in real time for your plantation."
+    },
+    {
+        "category": "grower",
+        "question": "What are soil nutrient levels?",
+        "answer": "Soil nutrient levels measure the concentration of key minerals — especially Nitrogen, Phosphorus, and Potassium (NPK) — that your crops need to grow. Our IoT sensors continuously monitor these levels so you can apply fertilizer precisely when the soil needs it, avoiding waste and maximising yield."
+    },
+    {
+        "category": "grower",
+        "question": "What is soil monitoring?",
+        "answer": "Soil monitoring means tracking your soil's condition in real time — including moisture, temperature, nutrient levels (NPK), and pH. Our plantation-grade sensors are buried at optimal depths across your estate to give you a live picture of what your soil needs right now."
+    },
+
+
+    # PROFESSIONALS FROM OTHER FIELDS
+    {
+        "category": "exploring",
+        "question": "I am a doctor. How can I get help from your product?",
+        "answer": "Welcome! While Varsapradaya is built for the agritech sector, many professionals like healthcare workers also own or invest in plantations. If you are a plantation owner, investor, or simply exploring agritech, we would love to help. Reach us at info@varsapradaya.com or call +91 70323 25050."
+    },
+    {
+        "category": "exploring",
+        "question": "I am not a farmer or investor. Can Varsapradaya still help me?",
+        "answer": "Absolutely! Regardless of your profession, if you are curious about agritech, own land, or are considering an investment in sustainable farming, Varsapradaya has something for you. Feel free to reach out to us at info@varsapradaya.com or call +91 70323 25050 and we will guide you."
+    },
+    {
+        "category": "exploring",
+        "question": "I am from a different industry. How is Varsapradaya relevant to me?",
+        "answer": "Varsapradaya's technology has broad relevance — from sustainability and ESG reporting for businesses, to investment opportunities in the growing agritech sector, to supply chain transparency for food companies. Contact us at info@varsapradaya.com to explore how we can be of value to you."
+    },
+     {
+        "category": "exploring",
+        "question": "What is Soil Sync and how does it work?",
+        "answer": "Soil Sync is Varsapradaya's precision soil health monitoring system. It uses advanced IoT plantation-grade sensors to continuously track soil moisture, temperature, and nutrient levels, sending real-time alerts to the FarmFuture app so growers can optimize irrigation and fertilizer application."
     }
+ 
+ 
 
 ]
