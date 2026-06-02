@@ -22,7 +22,11 @@ logger = get_logger()
 async def lifespan(app: FastAPI):
     logger.info("Varsapradaya FAQ Agent starting up...")
 
-    # 1. Seed FAQ embeddings into pgvector on first run
+    # 1. Start continuous idle session background monitoring loop
+    from app.utils.scheduler import monitor_inactive_sessions_loop
+    monitor_task = asyncio.create_task(monitor_inactive_sessions_loop())
+
+    # 2. Seed FAQ embeddings into pgvector on first run
     try:
         from app.rag.seed_embeddings import seed
         await seed()
@@ -30,7 +34,7 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to seed FAQ embeddings: {e}")
 
-    # 2. Compile LangGraph with PostgreSQL checkpointer
+    # 3. Compile LangGraph with PostgreSQL checkpointer
     # AsyncPostgresSaver persists full conversation state across server restarts.
     # It auto-creates the 'checkpoints' and 'checkpoint_blobs' tables in PostgreSQL.
     try:
@@ -55,11 +59,21 @@ async def lifespan(app: FastAPI):
 
     # Shutdown cleanup
     logger.info("Varsapradaya FAQ Agent shutting down...")
+    
+    # Cancel the background monitoring daemon cleanly
+    logger.info("Stopping idle session monitor daemon...")
+    monitor_task.cancel()
+    try:
+        await monitor_task
+    except asyncio.CancelledError:
+        pass
+
     try:
         await engine.dispose()
         logger.info("Database engine disposed.")
     except Exception as e:
         logger.error(f"Error disposing database engine: {e}")
+
 
 
 app = FastAPI(

@@ -129,6 +129,44 @@ async def get_last_10_messages(db: AsyncSession, session_id):
     rows = result.fetchall()
     return [{"role": r[0], "content": r[1]} for r in rows]
 
+async def get_all_session_messages(db: AsyncSession, session_id):
+    query = """
+        SELECT role, content FROM messages
+        WHERE session_id = :session_id
+        ORDER BY created_at ASC
+    """
+    result = await db.execute(text(query), {"session_id": session_id})
+    rows = result.fetchall()
+    return [{"role": r[0], "content": r[1]} for r in rows]
+
+async def fetch_inactive_sessions(db: AsyncSession, threshold_minutes: int = 30):
+    query = """
+        SELECT 
+            s.id AS session_id,
+            s.category,
+            u.email,
+            u.name,
+            u.phone
+        FROM sessions s
+        JOIN users u ON s.user_id = u.id
+        LEFT JOIN (
+            SELECT session_id, MAX(created_at) AS last_msg_time
+            FROM messages
+            GROUP BY session_id
+        ) m ON s.id = m.session_id
+        WHERE s.ended_at IS NULL
+          AND (
+              (m.last_msg_time IS NOT NULL AND m.last_msg_time < NOW() - INTERVAL '1 minute' * :threshold)
+              OR
+              (m.last_msg_time IS NULL AND s.started_at < NOW() - INTERVAL '1 minute' * :threshold)
+          );
+    """
+    result = await db.execute(text(query), {"threshold": threshold_minutes})
+    return result.fetchall()
+
+
+
+
 async def write_log(db: AsyncSession, level: str, event: str, message: str, user_id=None, session_id=None, meta={}):
     try:
         query = """
