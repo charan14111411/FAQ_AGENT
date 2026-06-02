@@ -7,7 +7,9 @@ import asyncpg
 import httpx
 from app.config import settings
 
-CRM_URL = "https://dev.businesscentral.in/rest/telecaller/backoffice/createProspect"
+# OLD CODE (Commented out):
+# CRM_URL = "https://dev.businesscentral.in/rest/telecaller/backoffice/createProspect"
+CRM_URL = "http://localhost:8000/api/createprospect"
 
 async def run():
     url = settings.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")
@@ -33,7 +35,9 @@ async def run():
         print("\n" + "=" * 70)
         print("TEST CRM WITH phone=7569444260 (Charan's number)")
         print("=" * 70)
-        payload = {"name": "Charan", "mobile": "7569444260", "source": "FAQchat"}
+        # OLD CODE (Commented out):
+        # payload = {"name": "Charan", "mobile": "7569444260", "source": "FAQchat"}
+        payload = {"name": "Charan", "phone_number": "7569444260", "source": "FAQchat"}
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.post(CRM_URL, json=payload)
             print(f"Status: {response.status_code}")

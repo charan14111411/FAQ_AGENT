@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: Optional[str] = None
     LLM_PROVIDER: str = "groq"
     FRONTEND_URL: str = "http://localhost:5500"
+    BACKEND_URL: str = "http://localhost:8000"
     EMBEDDING_MODEL: str = "text-embedding-3-small"
     SESSION_TIMEOUT_MINUTES: int = 30
 

@@ -106,8 +106,13 @@ FAQ = [
     # INVESTOR CATEGORY
     {
         "category": "investor",
-        "question": "What is the total addressable market for plantation-specific agritech?",
-        "answer": "While general agritech is crowded, the High-Value Plantation sector covering Coffee, Tea, Cocoa, and Spices is underserved and worth over $25B globally in technology potential."
+        "question": "What is the Total Addressable Market (TAM) for plantation-specific agritech?",
+        "answer": "While general agritech is crowded, the Total Addressable Market (TAM) for the High-Value Plantation sector covering Coffee, Tea, Cocoa, and Spices is underserved and worth over $25B globally in technology potential."
+    },
+    {
+        "category": "investor",
+        "question": "What is TAM or Total Addressable Market?",
+        "answer": "TAM stands for Total Addressable Market. For Varsapradaya's high-value plantation agritech, the global TAM is estimated to be over $25 Billion across the coffee, tea, cocoa, and spice sectors."
     },
     {
         "category": "investor",
