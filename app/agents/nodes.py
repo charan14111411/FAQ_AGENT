@@ -5,7 +5,6 @@ from app.agents.base_agent import _call_llm
 from app.data.personas import get_persona, get_persona_intro
 from app.rag.retriever import retrieve
 from app.db import (
-    find_user_by_email,
     create_user,
     create_session,
     save_message,
@@ -400,113 +399,56 @@ async def collect_email_node(state: ChatState) -> dict:
 
 async def _process_email_and_start_chat(state: ChatState, email: str, category: str) -> dict:
     """
-    DB lookup/create user, create session, transition to chatting.
-    Returning users: skip DB insert, use latest category, skip straight to chat.
-    New users: insert into users table, create session, start chat.
+    Creates a new user record in the database, establishes a session, and transitions to chatting.
+    (Since returning users are resolved solely via their unique mobile number at the previous step,
+    email is treated as non-unique, allowing multiple users to share an email address).
     """
     async with AsyncSessionLocal() as db:
-        existing_user = await find_user_by_email(db, email)
+        # Register new user record (Returning users skip this entire email node via the phone check)
+        new_user = await create_user(db, state["name"], email, state.get("phone"))
+        user_id = str(new_user.id)
+        phone = state.get("phone", "")
 
-        if existing_user:
-            # --- RETURNING USER ---
-            # Do NOT re-insert into users table. Use latest category (today's selection).
-            user_id = str(existing_user.id)
-            name = existing_user.name
-            phone = existing_user.phone or ""
+        session = await create_session(db, user_id, category, is_returning=False)
+        session_id = str(session.id)
 
-            # Create a new session with TODAY's category (not the last one)
-            session = await create_session(db, user_id, category, is_returning=True)
-            session_id = str(session.id)
+        await write_log(
+            db, "INFO", "user_created",
+            f"New user created: {email}, category: {category}",
+            user_id=new_user.id,
+            meta={"category": category}
+        )
 
-            await write_log(
-                db, "INFO", "user_returning",
-                f"Returning user: {email}, today's category: {category}",
-                user_id=existing_user.id,
-                meta={"category": category}
-            )
+        # --- CRM: register prospect (non-blocking) ---
+        prospect_id = await create_crm_prospect(name=state.get("name", ""), mobile=phone)
+        if prospect_id == "DUPLICATE":
+            # Mobile already in CRM — reuse the prospectID from the user's last session
+            prospect_id = await get_prospect_id_for_user(db, user_id)
+            if prospect_id:
+                logger.info(f"CRM duplicate: reusing existing prospect_id={prospect_id} for user={state.get('name')}")
+        if prospect_id and prospect_id != "DUPLICATE":
+            try:
+                await update_session_prospect_id(db, session_id, prospect_id)
+            except Exception as crm_err:
+                logger.warning(f"Could not save prospect_id to session: {crm_err}")
 
-            # --- CRM: register prospect (non-blocking) ---
-            prospect_id = await create_crm_prospect(name=name, mobile=phone)
-            if prospect_id == "DUPLICATE":
-                # Mobile already in CRM — reuse the prospectID from the user's last session
-                prospect_id = await get_prospect_id_for_user(db, user_id)
-                if prospect_id:
-                    logger.info(f"CRM duplicate: reusing existing prospect_id={prospect_id} for user={name}")
-            if prospect_id and prospect_id != "DUPLICATE":
-                try:
-                    await update_session_prospect_id(db, session_id, prospect_id)
-                except Exception as crm_err:
-                    logger.warning(f"Could not save prospect_id to session: {crm_err}")
+        prompt = (
+            f"The new user ({state.get('name', 'there')}) has just completed setup. "
+            "Briefly tell them they are all set, then ask what you can help with today. "
+            "Keep the response under 15 words."
+        )
+        reply = await _generate_dynamic_reply(prompt, category=category)
 
-            # Welcome-back message in today's agent's tone
-            prompt = (
-                f"Welcome back the returning user whose name is {name}. "
-                f"They are now engaging as a {category} audience member. "
-                "Keep the welcome warm but extremely short (under 15 words). "
-                "Ask what you can help with today."
-            )
-            reply = await _generate_dynamic_reply(prompt, category=category)
-
-            return {
-                "email": email,
-                "user_id": user_id,
-                "session_id": session_id,
-                "name": name,
-                "phone": phone,
-                "is_returning": True,
-                "reply": reply,
-                "step": "chatting",
-                "agent_name": f"{category}_agent",
-                "farewell_attempts": 0,
-            }
-
-
-        else:
-            # --- NEW USER ---
-            new_user = await create_user(db, state["name"], email, state.get("phone"))
-            user_id = str(new_user.id)
-            phone = state.get("phone", "")
-
-            session = await create_session(db, user_id, category, is_returning=False)
-            session_id = str(session.id)
-
-            await write_log(
-                db, "INFO", "user_created",
-                f"New user created: {email}, category: {category}",
-                user_id=new_user.id,
-                meta={"category": category}
-            )
-
-            # --- CRM: register prospect (non-blocking) ---
-            prospect_id = await create_crm_prospect(name=state.get("name", ""), mobile=phone)
-            if prospect_id == "DUPLICATE":
-                # Mobile already in CRM — reuse the prospectID from the user's last session
-                prospect_id = await get_prospect_id_for_user(db, user_id)
-                if prospect_id:
-                    logger.info(f"CRM duplicate: reusing existing prospect_id={prospect_id} for user={state.get('name')}")
-            if prospect_id and prospect_id != "DUPLICATE":
-                try:
-                    await update_session_prospect_id(db, session_id, prospect_id)
-                except Exception as crm_err:
-                    logger.warning(f"Could not save prospect_id to session: {crm_err}")
-
-            prompt = (
-                f"The new user ({state.get('name', 'there')}) has just completed setup. "
-                "Briefly tell them they are all set, then ask what you can help with today. "
-                "Keep the response under 15 words."
-            )
-            reply = await _generate_dynamic_reply(prompt, category=category)
-
-            return {
-                "email": email,
-                "user_id": user_id,
-                "session_id": session_id,
-                "is_returning": False,
-                "reply": reply,
-                "step": "chatting",
-                "agent_name": f"{category}_agent",
-                "farewell_attempts": 0,
-            }
+        return {
+            "email": email,
+            "user_id": user_id,
+            "session_id": session_id,
+            "is_returning": False,
+            "reply": reply,
+            "step": "chatting",
+            "agent_name": f"{category}_agent",
+            "farewell_attempts": 0,
+        }
 
 
 
