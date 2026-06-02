@@ -209,7 +209,7 @@ FAQ = [
     {
         "category": "exploring",
         "question": "What is the contact email address and phone number?",
-        "answer": "You can contact our support team via email at contact@varsapradaya.com or call us directly at +91 98765 43210."
+        "answer": "You can contact our support team via email at info@varsapradaya.com or call us directly at +91 70323 25050."
     },
     {
         "category": "exploring",
@@ -229,7 +229,7 @@ FAQ = [
     {
         "category": "exploring",
         "question": "How can I invest in Varsapradaya or become an investor?",
-        "answer": "We welcome investor interest! Please reach out to our team directly at contact@varsapradaya.com or call +91 98765 43210 to learn about investment opportunities and our growth roadmap."
+        "answer": "We welcome investor interest! Please reach out to our team directly at info@varsapradaya.com or call +91 70323 25050 to learn about investment opportunities and our growth roadmap."
     },
     {
         "category": "exploring",
@@ -239,7 +239,7 @@ FAQ = [
     {
         "category": "exploring",
         "question": "How do I get started with Varsapradaya or sign up?",
-        "answer": "You can reach out to our team at contact@varsapradaya.com or call +91 98765 43210. We will connect you with the right advisor based on whether you are a grower, a corporate partner, or an investor."
+        "answer": "You can reach out to our team at info@varsapradaya.com or call +91 70323 25050. We will connect you with the right advisor based on whether you are a grower, a corporate partner, or an investor."
     },
     {
         "category": "exploring",
@@ -255,6 +255,96 @@ FAQ = [
         "category": "exploring",
         "question": "here from ur side what can i get",
         "answer": "We offer IoT sensor networks, AI farm analytics, and the FarmFuture platform from our side."
+    },
+    {
+        "category": "exploring",
+        "question": "How can I get help from your side?",
+        "answer": "We are here to help! At Varsapradaya we offer IoT sensor networks, AI-driven farm analytics, the FarmFuture platform, and expert advisors. Reach out to us at info@varsapradaya.com or call +91 70323 25050 and we will connect you with the right person."
+    },
+    {
+        "category": "exploring",
+        "question": "How could you help me?",
+        "answer": "We can help you in several ways — through smart IoT sensors for your plantation, AI-powered crop analytics via our FarmFuture app, supply chain compliance tools for corporates, or investment insights. Just tell us your role and we will tailor our support to you."
+    },
+    {
+        "category": "exploring",
+        "question": "How could u help me?",
+        "answer": "We can help you with smart plantation monitoring, AI crop analytics, early pest alerts, regulatory compliance, and quality verification. Whether you are a grower, corporate, or investor, our FarmFuture platform and expert team are here for you."
+    },
+    {
+        "category": "exploring",
+        "question": "How can u help me?",
+        "answer": "We help growers monitor their plantations with IoT sensors, corporates with compliance and supply chain tools, and investors with agritech market data — all through our FarmFuture platform. Contact us at info@varsapradaya.com to get started."
+    },
+    {
+        "category": "exploring",
+        "question": "What can i get from you?",
+        "answer": "From Varsapradaya, you can get IoT sensor networks for plantation monitoring, AI-driven crop analytics, pest and climate alerts, quality verification for buyers, and direct expert support from our team."
+    },
+    {
+        "category": "exploring",
+        "question": "What can I get from Varsapradaya?",
+        "answer": "You can get smart IoT sensors for your plantation, the FarmFuture AI analytics app, early pest and disease alerts, crop quality verification, EUDR compliance support, and a dedicated advisor for your needs."
+    },
+    {
+        "category": "exploring",
+        "question": "What can you do for me?",
+        "answer": "Varsapradaya can help you monitor your plantation with smart sensors, get real-time crop health alerts, ensure regulatory compliance, and make data-driven farming decisions — all through our FarmFuture platform."
+    },
+    {
+        "category": "exploring",
+        "question": "How can you assist me?",
+        "answer": "We can assist you by providing precision IoT sensor data, AI farm analytics, pest and climate alerts, and market quality verification for your crops. Our team is also available directly at info@varsapradaya.com."
+    },
+    {
+        "category": "exploring",
+        "question": "What kind of support do you offer?",
+        "answer": "We offer technical support for IoT hardware, advisory services through our AI-powered FarmFuture platform, a Partner Portal for resellers, and dedicated account managers for corporate clients."
+    },
+    {
+        "category": "exploring",
+        "question": "What services do you provide?",
+        "answer": "Varsapradaya provides plantation-grade IoT sensor networks, AI crop analytics, the FarmFuture mobile app, EUDR compliance tools, and a Partner Portal for resellers and corporate clients."
+    },
+    {
+        "category": "exploring",
+        "question": "What help can I get from Varsapradaya?",
+        "answer": "You can get help with smart plantation monitoring using IoT sensors, AI-driven insights via the FarmFuture app, sustainability compliance reporting, and direct expert support from our team at info@varsapradaya.com or +91 70323 25050."
+    },
+    {
+        "category": "grower",
+        "question": "How can you help me as a grower?",
+        "answer": "As a grower, we help you monitor your plantation with precision sensors, get early pest and disease alerts, optimize fertilizer usage, and prove your crop quality to buyers — all through our easy-to-use FarmFuture app."
+    },
+    {
+        "category": "investor",
+        "question": "How can you help me as an investor?",
+        "answer": "For investors, we provide data-backed insights into the plantation agritech market, our hybrid hardware and SaaS revenue model, IP protection details, and our international expansion roadmap. Reach us at info@varsapradaya.com to discuss opportunities."
+    },
+    {
+        "category": "corporate",
+        "question": "How can you help my company or business?",
+        "answer": "We help corporate clients with multi-estate monitoring dashboards, EUDR compliance automation, white-labeled reporting, reseller partner programs, and integration with existing irrigation and supply chain systems."
+    },
+    {
+        "category": "exploring",
+        "question": "What is my role with Varsapradaya?",
+        "answer": "Your role is based on how you identified yourself when you started chatting — as a Grower, Investor, Corporate partner, or someone Exploring. This helps us tailor the information we share with you to what is most relevant for your needs."
+    },
+    {
+        "category": "exploring",
+        "question": "What is my category or audience type?",
+        "answer": "When you started, you chose a role — Grower, Investor, Corporate, or Exploring. This lets us personalise our answers and connect you with the right advisor. You can always ask to change your focus area."
+    },
+    {
+        "category": "grower",
+        "question": "What is my role as a grower?",
+        "answer": "As a valued grower with Varsapradaya, your role is at the heart of what we do. We support you with smart IoT sensors, AI-driven insights, and the FarmFuture app to help you manage your plantation more efficiently and profitably."
+    },
+    {
+        "category": "investor",
+        "question": "What is my role as an investor?",
+        "answer": "As an investor, your role is to evaluate Varsapradaya as an agritech opportunity. We provide you with market data, our revenue model, growth roadmap, and IP details to help you make an informed decision."
     }
 
 ]

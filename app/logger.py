@@ -2,7 +2,14 @@ import json
 import logging
 from logging.handlers import RotatingFileHandler
 import os
+import uuid
 from datetime import datetime
+
+class UUIDEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, uuid.UUID):
+            return str(obj)
+        return super().default(obj)
 
 class JsonFormatter(logging.Formatter):
     def format(self, record):
@@ -15,7 +22,7 @@ class JsonFormatter(logging.Formatter):
             "session_id": getattr(record, "session_id", None),
             "meta": getattr(record, "meta", {})
         }
-        return json.dumps(log_record)
+        return json.dumps(log_record, cls=UUIDEncoder)
 
 _logger = None
 

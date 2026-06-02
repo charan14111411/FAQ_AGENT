@@ -238,6 +238,28 @@ async def collect_name_node(state: ChatState) -> dict:
 # NODE: await_phone — validate phone, ask for email (in agent persona)
 # ---------------------------------------------------------------------------
 
+def normalize_phone_number(phone: str) -> str:
+    """
+    Standardizes phone numbers to E.164 format (+91XXXXXXXXXX) for Indian numbers.
+    Ensures that various user formatting entries map to a single unified record.
+    """
+    # 1. Keep only digits
+    digits = "".join(c for c in phone if c.isdigit())
+    
+    # 2. If it's a 10-digit number, add the standard +91 country code prefix
+    if len(digits) == 10:
+        return f"+91{digits}"
+    
+    # 3. If it's a 12-digit number starting with '91', prepend '+'
+    if len(digits) == 12 and digits.startswith("91"):
+        return f"+{digits}"
+    
+    # 4. Fallback for other formats
+    if phone.startswith("+"):
+        return f"+{digits}"
+    return digits
+
+
 async def collect_phone_node(state: ChatState) -> dict:
     raw = state["user_input"].strip()
     category = state.get("category", "exploring")
@@ -263,9 +285,11 @@ async def collect_phone_node(state: ChatState) -> dict:
         return {"reply": reply, "step": "await_phone", "phone_attempts": attempts}
 
     # ── VALID PHONE NUMBER ──
+    normalized_phone = normalize_phone_number(raw)
+    
     # Check if this phone number already exists in the database
     async with AsyncSessionLocal() as db:
-        existing_user = await find_user_by_phone(db, raw)
+        existing_user = await find_user_by_phone(db, normalized_phone)
         
         if existing_user:
             # --- RETURNING USER (Found by Phone) ---
@@ -293,7 +317,7 @@ async def collect_phone_node(state: ChatState) -> dict:
             )
 
             # CRM integration
-            prospect_id = await create_crm_prospect(name=db_name, mobile=raw)
+            prospect_id = await create_crm_prospect(name=db_name, mobile=normalized_phone)
             if prospect_id == "DUPLICATE":
                 prospect_id = await get_prospect_id_for_user(db, user_id)
             if prospect_id and prospect_id != "DUPLICATE":
@@ -312,7 +336,7 @@ async def collect_phone_node(state: ChatState) -> dict:
             reply = await _generate_dynamic_reply(prompt, category=category)
 
             return {
-                "phone": raw,
+                "phone": normalized_phone,
                 "email": email,
                 "user_id": user_id,
                 "session_id": session_id,
@@ -336,7 +360,7 @@ async def collect_phone_node(state: ChatState) -> dict:
     reply = await _generate_dynamic_reply(prompt, category=category)
 
     return {
-        "phone": raw,
+        "phone": normalized_phone,
         "reply": reply,
         "step": "await_email",
         "email_attempts": 0,
