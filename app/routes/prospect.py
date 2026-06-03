@@ -183,7 +183,7 @@ async def get_prospect_conversations(prospect_id: str):
                 role_str = "user" if r[0] == "user" else "ai"
                 time_str = r[2].strftime("%Y-%m-%d %H:%M:%S") if r[2] else ""
                 
-                # If we encounter a new user message but already have one in the active pair,
+                # If we encounter the new user message but already have one in the active pair,
                 # push the incomplete pair first
                 if role_str == "user" and "user" in current_pair:
                     conversation_data.append(current_pair)
