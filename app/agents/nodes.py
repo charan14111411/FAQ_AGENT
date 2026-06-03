@@ -736,6 +736,7 @@ async def _answer_faq(state: ChatState, user_msg: str) -> dict:
             "You are their advisor/guide representing Varsapradaya. "
             "Never tell the user that they are the Advisor or that they represent Varsapradaya. "
             "They are the client, and you are the Advisor.\n"
+            "9. USER NAME: You must NEVER use or mention the user's name in your response unless the user's query is explicitly asking for their own name (e.g. 'what is my name'). Omit their name entirely from all other answers.\n"
         )
 
         if context and context.strip():
