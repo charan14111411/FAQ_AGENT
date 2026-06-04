@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     BACKEND_URL: str = "http://localhost:8000"
     EMBEDDING_MODEL: str = "text-embedding-3-small"
     SESSION_TIMEOUT_MINUTES: int = 30
+    QDRANT_URL: str = "http://localhost:6333"
+    QDRANT_COLLECTION: str = "faq_embeddings"
 
     class Config:
         env_file = ".env"
@@ -19,3 +21,4 @@ class Settings(BaseSettings):
         extra = "ignore"
 
 settings = Settings()
+
