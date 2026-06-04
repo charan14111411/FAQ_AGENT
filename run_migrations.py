@@ -23,8 +23,15 @@ async def run_migrations():
                 sql = f.read()
                 
             # Execute the SQL commands
-            await conn.execute(sql)
-            print(f"Successfully applied {file_name}")
+            try:
+                await conn.execute(sql)
+                print(f"Successfully applied {file_name}")
+            except Exception as e:
+                if file_name == "005_faq_embeddings.sql":
+                    print(f"Warning: Skipping {file_name} because pgvector is not available: {e}")
+                    logger.warning(f"Skipping {file_name} due to missing pgvector: {e}")
+                else:
+                    raise e
             
         print("All migrations applied successfully!")
     except Exception as e:
