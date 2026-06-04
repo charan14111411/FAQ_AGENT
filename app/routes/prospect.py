@@ -6,108 +6,13 @@ Groups messages by session and shows them in order.
 """
 
 from fastapi import APIRouter, HTTPException, status
-from typing import Any, Dict, Optional
-from pydantic import BaseModel
+from typing import Any, Dict
 from app.db import AsyncSessionLocal
 from sqlalchemy import text
 from app.logger import get_logger
 
 logger = get_logger()
 router = APIRouter()
-
-
-class CreateProspectRequest(BaseModel):
-    name: str
-    phone_number: Optional[str] = None
-    mobile: Optional[str] = None
-    source: Optional[str] = "FAQchat"
-
-
-@router.post(
-    "/createprospect",
-    summary="Create a new prospect locally",
-    description="Creates a local prospect and returns a sequential prospect ID."
-)
-async def create_prospect(req: CreateProspectRequest):
-    phone = req.phone_number or req.mobile
-    if not phone:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Phone number or mobile is required"
-        )
-    
-    async with AsyncSessionLocal() as db:
-        # Check duplicate
-        res = await db.execute(
-            text("SELECT prospect_id FROM prospects WHERE phone_number = :phone"),
-            {"phone": phone}
-        )
-        row = res.fetchone()
-        if row:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="failed to create as phone number is already existed"
-            )
-        
-        # Insert
-        result = await db.execute(
-            text("""
-                INSERT INTO prospects (name, phone_number, source)
-                VALUES (:name, :phone, :source)
-                RETURNING prospect_id
-            """),
-            {"name": req.name, "phone": phone, "source": req.source or "FAQchat"}
-        )
-        await db.commit()
-        p_id = str(result.scalar())
-        
-        logger.info(f"Local CRM: created prospect_id={p_id} for phone={phone}")
-        return {
-            "success": True,
-            "data": {
-                "message": "Prospect created successfully",
-                "prospect_id": p_id
-            }
-        }
-
-
-@router.get(
-    "/fetch_prospect/{phone_number}",
-    summary="Fetch prospect details by phone number",
-)
-async def fetch_prospect(phone_number: str):
-    async with AsyncSessionLocal() as db:
-        res = await db.execute(
-            text("SELECT prospect_id, name, phone_number, source FROM prospects WHERE phone_number = :phone"),
-            {"phone": phone_number}
-        )
-        row = res.fetchone()
-        if not row:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Prospect with phone number '{phone_number}' not found."
-            )
-        
-        p_id = str(row[0])
-        return {
-            "success": True,
-            "data": {
-                "prospect_id": p_id,
-                "name": row[1],
-                "phone_number": row[2],
-                "source": row[3]
-            }
-        }
-
-
-@router.get(
-    "/fetch_conversations/{prospect_id}",
-    response_model=Dict[str, Any],
-    summary="Get full conversation history for a prospect by id (alias)",
-)
-async def fetch_conversations(prospect_id: str):
-    return await get_prospect_conversations(prospect_id)
-
 
 
 @router.get(
