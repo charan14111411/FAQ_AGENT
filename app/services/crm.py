@@ -44,20 +44,22 @@ async def create_crm_prospect(name: str, mobile: str) -> str | None:
             response.raise_for_status()
             data = response.json()
 
-            if data.get("success") and data.get("data", {}).get("prospectID"):
-                prospect_id = str(data["data"]["prospectID"])
+            inner_data = data.get("data") or {}
+            prospect_id = inner_data.get("prospectID")
+            if prospect_id:
+                prospect_id_str = str(prospect_id)
                 logger.info(
-                    f"CRM prospect created: prospectID={prospect_id}, name={name}",
-                    extra={"event": "crm_prospect_created"},
+                    f"CRM prospect registered/retrieved: prospectID={prospect_id_str}, name={name}",
+                    extra={"event": "crm_prospect_retrieved"},
                 )
-                return prospect_id
+                return prospect_id_str
 
             # CRM says mobile already registered — prospect exists in CRM already.
             # Return sentinel so caller can look up the existing prospect_id from DB.
-            msg = data.get("data", {}).get("message", "")
+            msg = inner_data.get("message", "")
             if "already exists" in msg.lower() or "duplicate" in msg.lower():
                 logger.info(
-                    f"CRM: mobile already registered for name={name}, mobile={mobile}. Will reuse existing prospect_id.",
+                    f"CRM: mobile already registered for name={name}, mobile={mobile} but no prospectID returned. Will reuse existing prospect_id via fallback.",
                     extra={"event": "crm_prospect_duplicate"},
                 )
                 return "DUPLICATE"
