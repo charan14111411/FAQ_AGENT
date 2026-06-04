@@ -38,16 +38,30 @@ async def lifespan(app: FastAPI):
     # AsyncPostgresSaver persists full conversation state across server restarts.
     # It auto-creates the 'checkpoints' and 'checkpoint_blobs' tables in PostgreSQL.
     try:
+        from psycopg_pool import AsyncConnectionPool
+        from psycopg.rows import dict_row
         from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
         # Strip the SQLAlchemy driver prefix — psycopg3 uses plain postgresql:// or postgresql+psycopg://
         checkpoint_url = settings.CHECKPOINT_DB_URL
 
-        async with AsyncPostgresSaver.from_conn_string(checkpoint_url) as checkpointer:
-            await checkpointer.setup()  # idempotent: safe to run every startup
-            app.state.faq_graph = faq_graph_builder.compile(checkpointer=checkpointer)
-            logger.info("LangGraph compiled with PostgreSQL checkpointer.")
-            yield
+        # Create a robust connection pool for the checkpointer to handle timeouts & self-healing
+        pool = AsyncConnectionPool(
+            conninfo=checkpoint_url,
+            min_size=1,
+            max_size=10,
+            kwargs={"autocommit": True, "row_factory": dict_row}
+        )
+        await pool.open()
+
+        checkpointer = AsyncPostgresSaver(pool)
+        await checkpointer.setup()  # idempotent: safe to run every startup
+        app.state.faq_graph = faq_graph_builder.compile(checkpointer=checkpointer)
+        logger.info("LangGraph compiled with PostgreSQL checkpointer using AsyncConnectionPool.")
+        yield
+        
+        # Shutdown: Close the connection pool gracefully
+        await pool.close()
 
     except Exception as e:
         logger.error(f"PostgreSQL checkpointer failed: {e}. Falling back to MemorySaver.")

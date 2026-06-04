@@ -332,13 +332,23 @@ async def trigger_post_chat_followup(phone: str, name: str, session_id: str = No
         except Exception as db_err:
             logger.error(f"Failed to fetch user_id for logging: {db_err}")
 
+    # Format phone number: strip any '+' and leading '91' country code since the external API
+    # automatically prepends '91' to the payload input, preventing double country code errors.
+    digits = "".join(c for c in phone if c.isdigit())
+    if len(digits) == 12 and digits.startswith("91"):
+        formatted_phone = digits[2:]
+    elif len(digits) == 10:
+        formatted_phone = digits
+    else:
+        formatted_phone = digits
+
     logger.info(
-        f"Triggering post-chat followup for: {name} ({phone})",
+        f"Triggering post-chat followup for: {name} (original={phone}, sent={formatted_phone})",
         extra={"session_id": session_id, "user_id": user_id}
     )
     try:
         payload = {
-            "mobileNumber": phone,
+            "mobileNumber": formatted_phone,
             "name": name
         }
         
