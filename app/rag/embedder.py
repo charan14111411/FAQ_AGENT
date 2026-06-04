@@ -13,16 +13,27 @@ def get_model():
     if _model is None:
         from sentence_transformers import SentenceTransformer
         logger.info("Loading local SentenceTransformer model 'all-MiniLM-L6-v2' (384 dimensions)...")
-        os.environ.setdefault("HF_HUB_OFFLINE", "1")
         try:
+            # 1. Try loading from local cache (fast, offline)
             _model = SentenceTransformer("all-MiniLM-L6-v2", local_files_only=True)
-        except Exception as e:
-            logger.error(
-                "Local SentenceTransformer model load failed. "
-                "Ensure 'all-MiniLM-L6-v2' is cached locally or allow internet access to download it."
-            )
-            raise
-        logger.info("SentenceTransformer model loaded successfully.")
+        except Exception:
+            logger.warning("SentenceTransformer model 'all-MiniLM-L6-v2' not found in cache. Attempting online download...")
+            try:
+                # 2. Try online download (requires internet access on first run)
+                _model = SentenceTransformer("all-MiniLM-L6-v2", local_files_only=False)
+                logger.info("SentenceTransformer model downloaded and cached successfully.")
+            except Exception as download_err:
+                logger.error(
+                    f"Failed to load or download SentenceTransformer model: {download_err}\n\n"
+                    "--- OFFLINE PRODUCTION DEPLOYMENT INSTRUCTIONS ---\n"
+                    "If your production server has no internet access, you must transfer the model manually:\n"
+                    "1. Copy this folder from your local development machine:\n"
+                    "   C:\\Users\\Leela\\.cache\\huggingface\\hub\\models--sentence-transformers--all-MiniLM-L6-v2\n"
+                    "2. Paste it on the production server under the same path in the user profile directory running the server:\n"
+                    "   <user_home_dir>\\.cache\\huggingface\\hub\\models--sentence-transformers--all-MiniLM-L6-v2\n"
+                    "--------------------------------------------------\n"
+                )
+                raise download_err
     return _model
 
 def _get_local_embedding(text: str) -> list:
