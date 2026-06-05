@@ -92,9 +92,8 @@ async def _generate_dynamic_reply(system_prompt: str, user_input: str = "", cate
 
 async def _classify_with_llm(user_message: str) -> str:
     """
-    Fast LLM call to classify free-text into one of 4 categories.
-    Returns one of: grower, investor, corporate, exploring
-    Defaults to 'exploring' if unclear.
+    Fast LLM call to classify free-text into one of 4 categories, or return 'unclear' if vague/greeting.
+    Returns one of: grower, investor, corporate, exploring, unclear
     """
     classify_messages = [
         {
@@ -106,9 +105,10 @@ async def _classify_with_llm(user_message: str) -> str:
                 "- investor (VCs, venture capitalists, analysts, financial professionals, fund managers)\n"
                 "- corporate (executives, compliance officers, supply-chain managers, resellers, "
                 "  distributors, agritech partners, anyone in a business/commercial/partnership role)\n"
-                "- exploring (curious individuals, students, general public, anyone just learning)\n\n"
-                "Reply with ONLY the single category word. Nothing else. "
-                "If you are unsure, reply 'exploring'."
+                "- exploring (curious individuals, students, general public, anyone just learning)\n"
+                "If the message is a generic greeting (like 'hi', 'hello', 'hii'), or does not contain "
+                "enough context/information to identify a role, reply with the word 'unclear'. Do NOT guess.\n\n"
+                "Reply with ONLY the single category word. Nothing else."
             ),
         },
         {"role": "user", "content": user_message},
@@ -118,8 +118,9 @@ async def _classify_with_llm(user_message: str) -> str:
     category = result["reply"].strip().lower()
 
     # Normalize and validate
-    if category not in VALID_CATEGORIES:
-        return "exploring"
+    valid_classifications = {"grower", "investor", "corporate", "exploring", "unclear"}
+    if category not in valid_classifications:
+        return "unclear"
     return category
 
 
@@ -129,11 +130,12 @@ async def _classify_with_llm(user_message: str) -> str:
 
 async def classify_entry_node(state: ChatState) -> dict:
     """
-    First node. Runs once per conversation.
-    Detects the category from the user's first message and asks for their name
-    in that agent's persona voice.
+    First node. Runs once per conversation (or loops if category is unclear).
+    Detects the category from the user's message, retrying up to 2 times,
+    and asks for their name mentioning their category professionally.
     """
     raw = state["user_input"].strip().lower()
+    classify_attempts = state.get("classify_attempts", 0)
 
     # Check button click map first (O(1), no LLM)
     category = None
@@ -146,13 +148,40 @@ async def classify_entry_node(state: ChatState) -> dict:
     if not category:
         category = await _classify_with_llm(raw)
 
+    # Handle unclear category loop
+    if category == "unclear":
+        classify_attempts += 1
+        if classify_attempts < 3:
+            logger.info("Category classification unclear, prompting user to clarify", extra={"event": "category_unclear"})
+            prompt = (
+                "The user sent a message that does not specify if they are a grower, an investor, corporate partner, or just exploring. "
+                "Warmly greet them, and ask them to select one of these categories or specify their role to proceed."
+            )
+            reply = await _generate_dynamic_reply(prompt)
+            return {
+                "category": None,
+                "step": "start",
+                "reply": reply,
+                "classify_attempts": classify_attempts,
+                "agent_name": None,
+                "is_returning": False,
+                "phone_attempts": 0,
+                "email_attempts": 0,
+                "farewell_attempts": 0,
+            }
+        else:
+            # Default to exploring after 2 retries (3 total unclear attempts)
+            category = "exploring"
+            logger.info("Defaulting category to exploring after 3 unclear attempts", extra={"event": "category_defaulted"})
+
     logger.info(f"Category classified: {category}", extra={"event": "category_classified"})
 
-    # Ask for name in the agent's tone (fully LLM-generated, no hardcoded strings)
+    # Ask for name in the agent's tone (fully LLM-generated), mentioning their category in a professional tone
     prompt = (
-        f"The user has identified themselves as belonging to the '{category}' audience. "
-        "Warmly welcome them to Varsapradaya. Keep the welcome extremely brief (under 15 words). "
-        "Then ask for their full name to get started."
+        f"The user belongs to the '{category}' category. "
+        f"Warmly welcome them to Varsapradaya. Ask for their full name to get started, making sure to explicitly "
+        f"mention their category in a professional, welcoming tone (e.g., 'Since you are a grower...', 'As an investor...'). "
+        "Keep the welcome and question concise and under 25 words."
     )
     reply = await _generate_dynamic_reply(prompt, category=category)
 
@@ -160,6 +189,7 @@ async def classify_entry_node(state: ChatState) -> dict:
         "category": category,
         "step": "await_name",
         "reply": reply,
+        "classify_attempts": classify_attempts,
         "agent_name": None,
         "is_returning": False,
         "phone_attempts": 0,

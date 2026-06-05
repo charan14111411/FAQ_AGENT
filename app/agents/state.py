@@ -28,4 +28,5 @@ class ChatState(TypedDict):
     phone_attempts: int             # Invalid phone entry counter
     email_attempts: int             # Invalid email entry counter
     farewell_attempts: int          # Counter for polite farewell/end attempts
+    classify_attempts: int          # Counter for category classification retries
 

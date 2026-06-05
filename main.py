@@ -44,12 +44,16 @@ async def lifespan(app: FastAPI):
 
         # Strip the SQLAlchemy driver prefix — psycopg3 uses plain postgresql:// or postgresql+psycopg://
         checkpoint_url = settings.CHECKPOINT_DB_URL
+        async def check_conn(conn):
+            await conn.execute("SELECT 1")
+ 
 
         # Create a robust connection pool for the checkpointer to handle timeouts & self-healing
         pool = AsyncConnectionPool(
             conninfo=checkpoint_url,
             min_size=1,
             max_size=10,
+            check=check_conn,
             kwargs={"autocommit": True, "row_factory": dict_row}
         )
         await pool.open()
