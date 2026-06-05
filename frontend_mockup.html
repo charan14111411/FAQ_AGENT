@@ -8,6 +8,7 @@
   <meta name="description"
     content="Chat with Varsapradaya's AI advisor — get answers for growers, investors, corporate partners, and explorers." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,400;1,600&display=swap"
     rel="stylesheet" />
@@ -17,18 +18,12 @@
     :root {
       --bg: #f7faf7;
       --surface: #ffffff;
-      --border: rgba(78, 109, 61, 0.08);
-      --text: #2c3e2c;
+      --border: rgba(0, 66, 37, 0.08);
+      --text: #003153;
       --text-muted: #6e8c6e;
-
-      /* Theme colors matching the light design screenshots */
-      --agent-color: #4e6d3d;
-      /* grower / default */
-      --agent-glow: rgba(78, 109, 61, 0.08);
-      --agent-gradient: linear-gradient(135deg, #4e6d3d, #344a29);
-      --bot-bubble-bg: #eef4ee;
-      --radius: 16px;
-      --radius-sm: 8px;
+      --primary-green: #004225;
+      --accent-green: #92bb37;
+      --radius: 12px;
     }
 
     *,
@@ -43,186 +38,110 @@
       font-family: 'Inter', sans-serif;
       background: var(--bg);
       color: var(--text);
-      height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      position: relative;
-    }
-
-    /* Ambient background glowing orbs */
-    body::before {
-      content: '';
-      position: absolute;
-      width: 500px;
-      height: 500px;
-      background: radial-gradient(circle, rgba(78, 109, 61, 0.04) 0%, rgba(255, 255, 255, 0) 70%);
-      top: -150px;
-      left: -100px;
-      z-index: 0;
-      pointer-events: none;
-    }
-
-    body::after {
-      content: '';
-      position: absolute;
-      width: 600px;
-      height: 600px;
-      background: radial-gradient(circle, rgba(139, 195, 74, 0.03) 0%, rgba(255, 255, 255, 0) 70%);
-      bottom: -150px;
-      right: -100px;
-      z-index: 0;
-      pointer-events: none;
-    }
-
-    /* ─── Header ─── */
-    .header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 32px;
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-      z-index: 10;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.01);
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .logo-icon {
-      width: 40px;
-      height: 40px;
-      background: linear-gradient(135deg, #4e6d3d, #7cb342);
-      border-radius: 12px;
+      min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 20px;
-      color: #ffffff;
-      box-shadow: 0 4px 12px rgba(78, 109, 61, 0.15);
-    }
-
-    .logo-name {
-      font-size: 16px;
-      font-weight: 700;
-      color: #2c3e2c;
-      letter-spacing: -0.3px;
-    }
-
-    .logo-sub {
-      font-size: 9.5px;
-      color: var(--text-muted);
-      font-weight: 600;
-      letter-spacing: 0.8px;
-      text-transform: uppercase;
-      margin-top: 1px;
-    }
-
-    .agent-badge {
-      display: none;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.4px;
-      background: var(--agent-glow);
-      color: var(--agent-color);
-      border: 1px solid var(--agent-color);
-      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.01);
-    }
-
-    .agent-badge.visible {
-      display: flex;
-    }
-
-    .agent-badge .dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--agent-color);
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-
-      0%,
-      100% {
-        opacity: 1;
-        transform: scale(1);
-      }
-
-      50% {
-        opacity: 0.5;
-        transform: scale(0.8);
-      }
-    }
-
-    /* ─── Chat Window ─── */
-    .chat-window {
-      flex: 1;
-      min-height: 0;
+      padding: 40px 20px;
       overflow-y: auto;
-      padding: 32px 24px;
+    }
+
+    /* ─── Main Section Layout ─── */
+    .conversation-container {
+      width: 100%;
+      max-width: 900px;
       display: flex;
       flex-direction: column;
       gap: 24px;
-      z-index: 5;
-      scroll-behavior: smooth;
+    }
 
-      /* Firefox scrollbar support */
+    .conversation-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding: 0 4px;
+    }
+
+    .conversation-header h2 {
+      font-size: clamp(24px, 4vw, 34px);
+      font-weight: 700;
+      color: var(--primary-green);
+      margin-bottom: 6px;
+      letter-spacing: -0.5px;
+    }
+
+    .conversation-header .subtitle {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: clamp(16px, 2.5vw, 22px);
+      color: #570000; /* Red brand accent color */
+      margin: 0;
+    }
+
+    .conversation-header .chat-logo {
+      width: 54px;
+      height: 54px;
+      object-fit: contain;
+    }
+
+    /* ─── Chat Card ─── */
+    .chat-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: 0 10px 30px -10px rgba(0, 66, 37, 0.03);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 100%;
+    }
+
+    /* ─── Messages List ─── */
+    .chat-window {
+      max-height: 400px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding-right: 8px;
+      scroll-behavior: smooth;
       scrollbar-width: thin;
-      scrollbar-color: var(--agent-color) rgba(0, 0, 0, 0.02);
+      scrollbar-color: var(--primary-green) rgba(0, 0, 0, 0.02);
     }
 
     .chat-window::-webkit-scrollbar {
-      width: 8px;
+      width: 6px;
     }
 
     .chat-window::-webkit-scrollbar-track {
       background: rgba(0, 0, 0, 0.02);
-      border-radius: 4px;
+      border-radius: 3px;
     }
 
     .chat-window::-webkit-scrollbar-thumb {
-      background: var(--agent-color);
-      border-radius: 4px;
-      border: 2px solid #ffffff;
+      background: var(--primary-green);
+      border-radius: 3px;
     }
 
-    .chat-window::-webkit-scrollbar-thumb:hover {
-      background: var(--agent-gradient);
-    }
-
-
-    /* ─── Messages ─── */
+    /* ─── Message Rows ─── */
     .msg-row {
       display: flex;
-      align-items: flex-start;
       gap: 14px;
-      max-width: 850px;
+      align-items: flex-start;
       width: 100%;
-      margin: 0 auto;
-      animation: bubbleAppear 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: bubbleAppear 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     @keyframes bubbleAppear {
       from {
         opacity: 0;
-        transform: translateY(10px) scale(0.98);
+        transform: translateY(8px);
       }
-
       to {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translateY(0);
       }
     }
 
@@ -230,96 +149,106 @@
       flex-direction: row-reverse;
     }
 
+    /* ─── Avatars ─── */
     .avatar {
-      width: 38px;
-      height: 38px;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 14px;
-      font-weight: 600;
+      font-size: 12px;
+      font-weight: 700;
       flex-shrink: 0;
-      border: 1px solid var(--border);
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
-      transition: transform 0.2s ease;
-    }
-
-    .avatar:hover {
-      transform: scale(1.05);
     }
 
     .avatar.bot-avatar {
-      background: var(--agent-color);
+      background: var(--primary-green);
       color: #ffffff;
-      border-color: var(--agent-color);
     }
 
     .avatar.user-avatar {
-      background: #e2e8e2;
-      color: #2c3e2c;
+      background: #ecede3;
+      color: var(--primary-green);
+      border: 1px solid rgba(0, 66, 37, 0.1);
     }
 
+    /* ─── Text Bubbles ─── */
     .bubble {
-      max-width: 75%;
-      font-size: 14.5px;
-      line-height: 1.65;
+      max-width: 80%;
+      font-size: 15px;
+      line-height: 1.6;
       word-break: break-word;
-      padding: 14px 20px;
-      border-radius: 18px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.015);
     }
 
+    /* Bot message styled as plain text next to avatar */
     .bubble.bot {
-      background: var(--bot-bubble-bg);
+      background: transparent;
+      border: none;
+      box-shadow: none;
       color: var(--text);
-      border-top-left-radius: 2px;
-      border: 1px solid rgba(78, 109, 61, 0.05);
+      padding: 4px 0;
     }
 
     .bubble.bot em {
-      font-family: 'Playfair Display', serif;
       font-style: italic;
-      font-weight: 600;
-      color: #1e301e;
-      font-size: 16px;
+      font-weight: 500;
     }
 
+    /* User message styled with solid green bubble */
     .bubble.user {
-      background: var(--agent-gradient);
+      background: var(--primary-green);
       color: #ffffff;
+      padding: 10px 16px;
+      border-radius: 16px;
       border-top-right-radius: 2px;
-      box-shadow: 0 4px 15px rgba(78, 109, 61, 0.12);
+      box-shadow: 0 4px 12px rgba(0, 66, 37, 0.08);
+    }
+
+    /* Markdown/HTML formatting support */
+    .bubble strong {
+      font-weight: 700;
+      color: inherit;
+    }
+
+    .bubble ul {
+      margin: 8px 0;
+      padding-left: 20px;
+      list-style-type: disc;
+    }
+
+    .bubble li {
+      margin: 4px 0;
     }
 
     /* ─── Onboarding Pills ─── */
     .onboarding-pills {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 16px;
+      gap: 10px;
+      margin-left: 48px; /* aligns to match text offset under bot avatar */
+      animation: bubbleAppear 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     .pill-btn {
       background: #ffffff;
-      border: 1.5px solid var(--agent-color);
-      color: var(--agent-color);
-      border-radius: 24px;
-      padding: 10px 22px;
+      border: 1.5px solid var(--primary-green);
+      color: var(--primary-green);
+      border-radius: 20px;
+      padding: 8px 18px;
       font-size: 13.5px;
-      font-weight: 600;
+      font-weight: 500;
       cursor: pointer;
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+      font-family: inherit;
+      transition: all 0.2s ease-in-out;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.01);
     }
 
     .pill-btn:hover {
-      background: var(--agent-glow);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 14px rgba(78, 109, 61, 0.08);
+      background: rgba(0, 66, 37, 0.04);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 66, 37, 0.08);
     }
 
     .pill-btn:active {
@@ -331,33 +260,30 @@
       display: none;
       align-items: center;
       gap: 14px;
-      max-width: 850px;
       width: 100%;
-      margin: 0 auto;
     }
 
     .typing-row.visible {
       display: flex;
-      animation: slideIn 0.25s ease;
     }
 
     .typing-bubble {
-      background: var(--bot-bubble-bg);
-      border-radius: 18px;
+      background: #f4f6f4;
+      border-radius: 16px;
       border-top-left-radius: 2px;
-      padding: 14px 20px;
+      padding: 10px 16px;
       display: flex;
-      gap: 5px;
+      gap: 4px;
       align-items: center;
-      border: 1px solid rgba(78, 109, 61, 0.05);
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.01);
+      border: 1px solid rgba(0, 66, 37, 0.04);
     }
 
     .typing-bubble span {
-      width: 7px;
-      height: 7px;
+      width: 6px;
+      height: 6px;
       border-radius: 50%;
-      background: var(--text-muted);
+      background: var(--primary-green);
+      opacity: 0.6;
       animation: bounce 1.2s infinite;
     }
 
@@ -370,117 +296,97 @@
     }
 
     @keyframes bounce {
-
-      0%,
-      80%,
-      100% {
+      0%, 80%, 100% {
         transform: translateY(0);
-        opacity: 0.5;
+        opacity: 0.4;
       }
-
       40% {
-        transform: translateY(-6px);
+        transform: translateY(-4px);
         opacity: 1;
       }
     }
 
-    /* ─── Pinned Input Bar (Premium Floating Design) ─── */
+    /* ─── Input Bar ─── */
     .input-bar {
-      background: transparent;
-      padding: 16px 24px 28px 24px;
-      display: flex;
-      align-items: center;
-      flex-shrink: 0;
-      z-index: 10;
+      width: 100%;
     }
 
     .input-wrapper {
-      max-width: 850px;
-      width: 100%;
-      margin: 0 auto;
       display: flex;
-      gap: 14px;
+      gap: 12px;
       align-items: center;
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(78, 109, 61, 0.1);
-      border-radius: 24px;
-      padding: 10px 16px;
-      box-shadow: 0 10px 30px -10px rgba(46, 61, 46, 0.08);
-      transition: all 0.3s ease;
+      border: 1.5px solid var(--primary-green);
+      border-radius: 8px;
+      padding: 8px 12px;
+      background: #ffffff;
+      transition: box-shadow 0.2s ease-in-out;
     }
 
     .input-wrapper:focus-within {
-      background: #ffffff;
-      border-color: var(--agent-color);
-      box-shadow: 0 10px 35px -8px rgba(78, 109, 61, 0.15), 0 0 0 3px var(--agent-glow);
+      box-shadow: 0 0 0 3px rgba(0, 66, 37, 0.1);
     }
 
     #chat-input {
       flex: 1;
       border: none;
       background: transparent;
-      padding: 10px 12px;
+      padding: 6px 4px;
       font-size: 15px;
       color: var(--text);
       font-family: inherit;
       outline: none;
-      height: 44px;
-      line-height: 1.45;
+      height: 36px;
+      line-height: 1.5;
       resize: none;
     }
 
     #chat-input::placeholder {
-      color: var(--text-muted);
+      color: rgba(0, 66, 37, 0.5);
     }
 
     #send-btn {
-      width: 44px;
-      height: 44px;
-      border: none;
-      background: var(--agent-gradient);
-      color: #ffffff;
-      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      border: 1.5px solid var(--primary-green);
+      background: transparent;
+      color: var(--primary-green);
+      border-radius: 6px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transition: all 0.2s ease;
       flex-shrink: 0;
-      box-shadow: 0 4px 10px rgba(78, 109, 61, 0.15);
     }
 
-    #send-btn:hover {
-      transform: scale(1.08) translateY(-1px);
-      box-shadow: 0 6px 14px rgba(78, 109, 61, 0.25);
+    #send-btn:hover:not(:disabled) {
+      background: var(--primary-green);
+      color: #ffffff;
     }
 
-    #send-btn:active {
-      transform: scale(0.95) translateY(0);
+    #send-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
     }
 
     #send-btn svg {
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
     }
 
-    /* ─── Responsive ─── */
-    @media (max-width: 480px) {
-      .chat-window {
-        padding: 20px 16px;
+    @media (max-width: 768px) {
+      body {
+        padding: 20px 10px;
       }
-
+      .chat-card {
+        padding: 16px;
+        gap: 16px;
+      }
+      .onboarding-pills {
+        margin-left: 0;
+      }
       .bubble {
         max-width: 85%;
-      }
-
-      .input-bar {
-        padding: 12px 16px;
-      }
-
-      .input-wrapper {
-        border-radius: 16px;
-        padding: 8px 12px;
       }
     }
   </style>
@@ -488,67 +394,56 @@
 
 <body>
 
-  <!-- ─── Header ─── -->
-  <header class="header">
-    <div class="logo">
-      <div class="logo-icon">🌿</div>
+  <div class="conversation-container">
+    <!-- Header with title and logo -->
+    <div class="conversation-header">
       <div>
-        <div class="logo-name">Varsapradaya</div>
-        <div class="logo-sub">Precision Plantation Intelligence</div>
+        <h2>Let's start a conversation.</h2>
+        <p class="subtitle">It could be magical.</p>
       </div>
+      <img src="./assets/images/varsapradaya-icon.webp" alt="Varsapradaya Icon" class="chat-logo"
+        onerror="this.style.display='none';" />
     </div>
-    <div class="agent-badge" id="agent-badge">
-      <span class="dot"></span>
-      <span id="badge-text">Grower Agent</span>
-    </div>
-  </header>
 
-  <!-- ─── Main Chat Window ─── -->
-  <div class="chat-window" id="chat-window">
-    <!-- Initial Onboarding Message -->
-    <div class="msg-row bot" id="onboarding-row">
-      <div class="avatar bot-avatar">FF</div>
-      <div class="bubble bot">
-        <div><em>Tell me about yourself —</em> are you a grower, an investor, or here for something else?</div>
-        <div class="onboarding-pills">
-          <button class="pill-btn" onclick="clickPill('grower', 'i am a grower', '🌱 Grower Advisor')">I'm a
-            grower</button>
-          <button class="pill-btn" onclick="clickPill('investor', 'i am an investor', '💰 Investor Advisor')">I'm an
-            investor</button>
-          <button class="pill-btn"
-            onclick="clickPill('corporate', 'corporate partnership', '🏢 Business Advisor')">Corporate /
-            Partnership</button>
-          <button class="pill-btn" onclick="clickPill('exploring', 'just exploring', '🔍 Explorer Guide')">Just
-            exploring</button>
+    <!-- Chat Card -->
+    <div class="chat-card">
+      <!-- Chat Window List -->
+      <div class="chat-window" id="chat-window">
+        <!-- Initial Onboarding Message -->
+        <div class="msg-row bot">
+          <div class="avatar bot-avatar">FF</div>
+          <div class="bubble bot">
+            <em>Tell me about yourself —</em> are you a grower, an investor, or here for something else?
+          </div>
+        </div>
+
+        <!-- Typing Indicator -->
+        <div class="typing-row" id="typing-indicator">
+          <div class="avatar bot-avatar">FF</div>
+          <div class="typing-bubble">
+            <span></span><span></span><span></span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Typing Indicator -->
-    <div class="typing-row" id="typing-indicator">
-      <div class="avatar bot-avatar" id="typing-avatar">🌿</div>
-      <div class="typing-bubble">
-        <span></span><span></span><span></span>
+      <!-- Input Bar -->
+      <div class="input-bar">
+        <div class="input-wrapper">
+          <textarea id="chat-input" placeholder="Send us a message. Type Here" rows="1"></textarea>
+          <button id="send-btn" onclick="sendMessage()" aria-label="Send message">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
       </div>
-    </div>
-  </div>
-
-  <!-- ─── Input Bar ─── -->
-  <div class="input-bar">
-    <div class="input-wrapper">
-      <textarea id="chat-input" placeholder="Send us a message. Type Here " rows="1"></textarea>
-      <button id="send-btn" onclick="sendMessage()" aria-label="Send message">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-          stroke-linejoin="round">
-          <line x1="22" y1="2" x2="11" y2="13"></line>
-          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-        </svg>
-      </button>
     </div>
   </div>
 
   <script>
-    // ─── State & Dynamic API Port Detection ───
+    // ─── State & API Configuration ───
     let API_BASE = 'http://127.0.0.1:8000/api';
     const thread_id = crypto.randomUUID();
 
@@ -557,91 +452,61 @@
         const res = await fetch('http://127.0.0.1:8000/api/health');
         if (!res.ok) throw new Error();
       } catch (err) {
+        // Fallback to local API port detection in case of offline development/testing
         try {
-          const res = await fetch('http://127.0.0.1:8001/api/health');
-          if (res.ok) {
+          const resLocal8001 = await fetch('http://127.0.0.1:8001/api/health');
+          if (resLocal8001.ok) {
             API_BASE = 'http://127.0.0.1:8001/api';
-            console.log("Dynamic API Port Detection: Switched backend to port 8001.");
+            console.log("Dynamic API Port Detection: Fell back to local backend on port 8001.");
           }
         } catch (e) {
-          console.warn("Dynamic API Port Detection: No responsive backend found on port 8000 or 8001.");
+          console.warn("Dynamic API Port Detection: Local backends on port 8000 and 8001 are unreachable.");
         }
       }
     }
-    detectApiPort();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const forceApi = urlParams.get('api');
+    if (forceApi) {
+      API_BASE = forceApi + (forceApi.endsWith('/api') ? '' : '/api');
+      console.log("Forced API Base via query parameter:", API_BASE);
+    } else {
+      detectApiPort();
+    }
+
     let currentAgent = null;
     let isWaiting = false;
 
-    const AGENT_THEMES = {
-      grower: {
-        color: '#4e6d3d',
-        glow: 'rgba(78, 109, 61, 0.08)',
-        gradient: 'linear-gradient(135deg, #4e6d3d, #344a29)',
-        botBg: '#eef4ee',
-        shadow: 'rgba(78, 109, 61, 0.15)',
-        icon: '🌱',
-        label: 'Grower Advisor'
-      },
-      investor: {
-        color: '#b8860b',
-        glow: 'rgba(184, 134, 11, 0.08)',
-        gradient: 'linear-gradient(135deg, #b8860b, #7e5c08)',
-        botBg: '#fdfbf5',
-        shadow: 'rgba(184, 134, 11, 0.15)',
-        icon: '💰',
-        label: 'Investor Advisor'
-      },
-      corporate: {
-        color: '#2a6b9c',
-        glow: 'rgba(42, 107, 156, 0.08)',
-        gradient: 'linear-gradient(135deg, #2a6b9c, #1a486b)',
-        botBg: '#f2f6fa',
-        shadow: 'rgba(42, 107, 156, 0.15)',
-        icon: '🏢',
-        label: 'Business Advisor'
-      },
-      exploring: {
-        color: '#7b1fa2',
-        glow: 'rgba(123, 31, 162, 0.08)',
-        gradient: 'linear-gradient(135deg, #7b1fa2, #51136b)',
-        botBg: '#faf0fb',
-        shadow: 'rgba(123, 31, 162, 0.15)',
-        icon: '🔍',
-        label: 'Explorer Guide'
-      },
-    };
+    // ─── Show/Hide Onboarding Pills ───
+    function showPills() {
+      let pills = document.getElementById('chat-onboarding-pills');
+      if (!pills) {
+        pills = document.createElement('div');
+        pills.id = 'chat-onboarding-pills';
+        pills.className = 'onboarding-pills';
+        pills.innerHTML = `
+          <button class="pill-btn" onclick="clickPill('grower', 'i am a grower', '🌱 Grower Advisor')">I'm a grower</button>
+          <button class="pill-btn" onclick="clickPill('investor', 'i am an investor', '💰 Investor Advisor')">I'm an investor</button>
+          <button class="pill-btn" onclick="clickPill('corporate', 'corporate partnership', '🏢 Business Advisor')">Corporate / Partnership</button>
+          <button class="pill-btn" onclick="clickPill('exploring', 'just exploring', '🔍 Explorer Guide')">Just exploring</button>
+        `;
+      }
+      pills.style.display = 'flex';
+      insertBeforeTyping(pills);
+      scrollToBottom();
+    }
 
-    // ─── Apply agent theme ───
-    function applyTheme(category) {
-      const theme = AGENT_THEMES[category] || AGENT_THEMES.exploring;
-      document.documentElement.style.setProperty('--agent-color', theme.color);
-      document.documentElement.style.setProperty('--agent-glow', theme.glow);
-      document.documentElement.style.setProperty('--agent-gradient', theme.gradient);
-      document.documentElement.style.setProperty('--bot-bubble-bg', theme.botBg);
-
-      const sendBtn = document.getElementById('send-btn');
-      sendBtn.style.background = theme.gradient;
-      sendBtn.style.boxShadow = `0 4px 10px ${theme.shadow}`;
-
-      const badge = document.getElementById('agent-badge');
-      badge.classList.add('visible');
-      badge.style.color = theme.color;
-      badge.style.borderColor = theme.color;
-      badge.style.background = theme.glow;
-      badge.querySelector('.dot').style.background = theme.color;
-      document.getElementById('badge-text').textContent = theme.label;
-      document.getElementById('typing-avatar').textContent = theme.icon;
+    function hidePills() {
+      const pills = document.getElementById('chat-onboarding-pills');
+      if (pills) {
+        pills.style.display = 'none';
+      }
     }
 
     // ─── Pill button click ───
     function clickPill(category, message, agentLabel) {
       currentAgent = category;
-      applyTheme(category);
-
-      // Hide onboarding pills so they cannot be clicked again
-      const pillsContainer = document.querySelector('.onboarding-pills');
-      if (pillsContainer) pillsContainer.style.display = 'none';
-
+      hidePills();
       appendUserBubble(agentLabel);
       sendToAPI(message);
     }
@@ -652,12 +517,9 @@
       const text = input.value.trim();
       if (!text || isWaiting) return;
       input.value = '';
-      input.style.height = '44px';
+      input.style.height = '36px';
 
-      // Hide onboarding pills if they are still visible
-      const pillsContainer = document.querySelector('.onboarding-pills');
-      if (pillsContainer) pillsContainer.style.display = 'none';
-
+      hidePills();
       appendUserBubble(text);
       sendToAPI(text);
     }
@@ -676,11 +538,10 @@
 
     // ─── Append bot bubble ───
     function appendBotBubble(text, agentCategory) {
-      const theme = agentCategory ? (AGENT_THEMES[agentCategory] || AGENT_THEMES.exploring) : { icon: '🌿', color: '#4e6d3d', gradient: 'linear-gradient(135deg, #4e6d3d, #344a29)' };
       const row = document.createElement('div');
       row.className = 'msg-row bot';
       row.innerHTML = `
-        <div class="avatar bot-avatar" style="background:${theme.gradient || theme.color};">${theme.icon || '🌿'}</div>
+        <div class="avatar bot-avatar">FF</div>
         <div class="bubble bot">${formatText(text)}</div>
       `;
       insertBeforeTyping(row);
@@ -731,16 +592,18 @@
         const data = await res.json();
         hideTyping();
 
-        // Update agent theme if agent field returned (after onboarding complete)
         if (data.agent) {
-          const cat = data.agent.replace('_agent', '');
-          if (!currentAgent || currentAgent !== cat) {
-            currentAgent = cat;
-            applyTheme(cat);
-          }
+          currentAgent = data.agent.replace('_agent', '');
         }
 
         appendBotBubble(data.reply, currentAgent);
+
+        // Control onboarding pills dynamically based on step
+        if (data.step === 'start') {
+          showPills();
+        } else {
+          hidePills();
+        }
 
         if (data.step === 'ended') {
           lockInput();
@@ -772,9 +635,7 @@
       return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    // Custom formatted text helper to handle formatting properly
     function formatText(str) {
-      // Preserve line breaks, bold **text**, bullet points starting with *, and basic formatting
       let formatted = escapeHtml(str);
 
       // Highlight bold text
@@ -816,7 +677,7 @@
     // ─── Auto-resize textarea ───
     const textarea = document.getElementById('chat-input');
     textarea.addEventListener('input', () => {
-      textarea.style.height = '44px';
+      textarea.style.height = '36px';
       textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
     });
     textarea.addEventListener('keydown', (e) => {
@@ -826,8 +687,11 @@
       }
     });
 
-    // Initial scroll check on load
-    window.addEventListener('load', scrollToBottom);
+    // Show initial pills and check scroll on load
+    window.addEventListener('load', () => {
+      showPills();
+      scrollToBottom();
+    });
   </script>
 </body>
 
