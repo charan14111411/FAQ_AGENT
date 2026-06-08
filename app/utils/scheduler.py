@@ -37,16 +37,17 @@ async def monitor_inactive_sessions_loop():
                     await end_session(db, session_id)
                     
                     # 3. Trigger email transcript & followup asynchronously (non-blocking task)
-                    email_task = asyncio.create_task(
-                        send_transcript_email(
-                            session_id=session_id,
-                            email=email,
-                            name=name,
-                            category=category
+                    if email:
+                        email_task = asyncio.create_task(
+                            send_transcript_email(
+                                session_id=session_id,
+                                email=email,
+                                name=name,
+                                category=category
+                            )
                         )
-                    )
-                    _background_tasks.add(email_task)
-                    email_task.add_done_callback(_background_tasks.discard)
+                        _background_tasks.add(email_task)
+                        email_task.add_done_callback(_background_tasks.discard)
                     
                     if phone:
                         followup_task = asyncio.create_task(

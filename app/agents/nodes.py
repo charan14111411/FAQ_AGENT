@@ -397,11 +397,37 @@ async def collect_phone_node(state: ChatState) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# HELPER: LLM-based skip check (no hardcoded skip words)
+# ---------------------------------------------------------------------------
+
+async def _check_if_email_skipped_with_llm(user_input: str) -> bool:
+    """
+    Fast LLM call to classify whether the user wants to skip or decline providing their email.
+    Returns True if they want to skip, False otherwise.
+    """
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are an intent classification assistant.\n"
+                "Determine if the user's message indicates they want to skip, bypass, decline, "
+                "or not provide their email address right now (e.g., 'skip', 'no', 'none', "
+                "'no thank you', 'dont have one', 'later', 'skip it', 'n/a').\n\n"
+                "Reply with EXACTLY 'SKIP' or 'PROVIDE'. Do not include any other words."
+            ),
+        },
+        {"role": "user", "content": user_input},
+    ]
+    result = await _call_llm(messages, max_tokens=10, temperature=0.0)
+    return "SKIP" in result["reply"].upper()
+
+
+# ---------------------------------------------------------------------------
 # NODE: await_email — validate email, DB lookup/create, start chatting
 # ---------------------------------------------------------------------------
 
 async def collect_email_node(state: ChatState) -> dict:
-    raw = state["user_input"].strip().lower()
+    raw = state["user_input"].strip()
     category = state.get("category", "exploring")
     attempts = state.get("email_attempts", 0) + 1
 
@@ -410,7 +436,14 @@ async def collect_email_node(state: ChatState) -> dict:
         reply = await _generate_dynamic_reply(prompt, category=category)
         return {"reply": reply, "step": "await_email", "email_attempts": attempts}
 
-    if not re.match(EMAIL_REGEX, raw):
+    # Dynamic LLM classification check to see if user wants to skip (No hardcoding)
+    is_skipped = await _check_if_email_skipped_with_llm(raw)
+
+    if is_skipped:
+        return await _process_email_and_start_chat(state, None, category)
+
+    raw_lower = raw.lower()
+    if not re.match(EMAIL_REGEX, raw_lower):
         # Check if the user is asking a question or trying to chat instead of providing an email
         prompt = (
             f"The user was asked for their email address for further collaboration, but instead they said: '{raw}'.\n"
@@ -424,7 +457,7 @@ async def collect_email_node(state: ChatState) -> dict:
         reply = await _generate_dynamic_reply(prompt, user_input=raw, category=category)
         return {"reply": reply, "step": "await_email", "email_attempts": attempts}
 
-    return await _process_email_and_start_chat(state, raw, category)
+    return await _process_email_and_start_chat(state, raw_lower, category)
 
 
 async def _process_email_and_start_chat(state: ChatState, email: str, category: str) -> dict:
@@ -436,6 +469,9 @@ async def _process_email_and_start_chat(state: ChatState, email: str, category: 
     async with AsyncSessionLocal() as db:
         # Register new user record (Returning users skip this entire email node via the phone check)
         new_user = await create_user(db, state["name"], email, state.get("phone"))
+        if not new_user:
+            logger.error("Failed to register user record; create_user returned None.")
+            raise RuntimeError("Database user registration failed.")
         user_id = str(new_user.id)
         phone = state.get("phone", "")
 
