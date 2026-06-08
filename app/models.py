@@ -11,6 +11,9 @@ class ChatRequest(BaseModel):
     """
     thread_id: str
     message: str
+    language_code: Optional[str] = "en"
+    language_name: Optional[str] = "English"
+    language_native_name: Optional[str] = "English"
 
 
 class ChatResponse(BaseModel):

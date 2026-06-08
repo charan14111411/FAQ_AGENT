@@ -71,7 +71,12 @@ async def handle_chat(req: ChatRequest, request: Request, background_tasks: Back
             agent_name = state_snapshot.values.get("agent_name") if state_snapshot and state_snapshot.values else None
             from app.agents.nodes import _generate_dynamic_reply
             prompt = "The user just used severe profanity or hostile language. Politely but firmly tell them that professional language is required to continue our conversation. Keep it to one sentence."
-            toxic_reply = await _generate_dynamic_reply(prompt)
+            toxic_reply = await _generate_dynamic_reply(
+                prompt,
+                language_code=req.language_code,
+                language_name=req.language_name,
+                language_native_name=req.language_native_name
+            )
             return ChatResponse(reply=toxic_reply, step=current_step, agent=agent_name)
 
         # Build the input — inject user_input and current step
@@ -79,6 +84,9 @@ async def handle_chat(req: ChatRequest, request: Request, background_tasks: Back
             "user_input": req.message,
             "step": current_step,
             "thread_id": req.thread_id,
+            "language_code": req.language_code,
+            "language_name": req.language_name,
+            "language_native_name": req.language_native_name,
         }
 
         # Run the graph

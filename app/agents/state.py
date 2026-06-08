@@ -29,4 +29,7 @@ class ChatState(TypedDict):
     email_attempts: int             # Invalid email entry counter
     farewell_attempts: int          # Counter for polite farewell/end attempts
     classify_attempts: int          # Counter for category classification retries
+    language_code:  Optional[str]  # e.g., "te", "en"
+    language_name:  Optional[str]  # e.g., "Telugu", "English"
+    language_native_name: Optional[str] # e.g., "తెలుగు", "English"
 

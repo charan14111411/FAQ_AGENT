@@ -2,6 +2,8 @@ from app.rag.embedder import embed_text
 from app.config import settings
 from app.logger import get_logger
 from qdrant_client import AsyncQdrantClient
+from app.agents.base_agent import _call_llm
+import re
 
 logger = get_logger()
 
@@ -20,7 +22,38 @@ async def retrieve(db, user_message: str, top_k: int = 3) -> str:
     """
     client = None
     try:
-        embedding = await embed_text(user_message)
+        # Preprocess/rewrite query using LLM if it contains pronouns or is in a non-English script
+        query = user_message.strip()
+        PRONOUN_PATTERN = re.compile(r"\b(you|u|your|ur|yourself|yours)\b", re.IGNORECASE)
+        
+        is_non_english = not query.isascii()
+        contains_pronoun = bool(PRONOUN_PATTERN.search(query))
+        
+        if is_non_english or contains_pronoun:
+            try:
+                rewrite_messages = [
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a search query optimizer for a precision agritech platform named Varsapradaya.\n"
+                            "Translate and rewrite the user's conversational message into a clean, third-person, "
+                            "grammatically correct English search query. Replace pronouns referring to the platform "
+                            "('you', 'u', 'your', 'ur', 'yourself', 'yours') with 'Varsapradaya' or 'Varsapradaya's' "
+                            "where grammatically appropriate. Keep the core intent identical.\n"
+                            "Do NOT add any greetings, conversational filler, or explanations. Reply with ONLY the rewritten query text."
+                        )
+                    },
+                    {"role": "user", "content": query}
+                ]
+                # Fast call with 30 max tokens
+                res = await _call_llm(rewrite_messages, max_tokens=30, temperature=0.0)
+                rewritten = res["reply"].strip().strip("\"'")
+                if rewritten:
+                    query = rewritten
+            except Exception as le:
+                logger.warning(f"Failed to rewrite query: {le}. Using original query.")
+
+        embedding = await embed_text(query)
         client = _get_client()
         
         if not await client.collection_exists(settings.QDRANT_COLLECTION):

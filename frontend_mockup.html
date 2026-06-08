@@ -389,6 +389,101 @@
         max-width: 85%;
       }
     }
+
+    /* ─── Language Selector ─── */
+    .lang-selector-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    .lang-trigger-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      padding: 6px 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--primary-green);
+      transition: all 0.2s ease-in-out;
+      border-radius: 6px;
+    }
+
+    .lang-trigger-btn:hover {
+      background: rgba(0, 66, 37, 0.04);
+      border-color: rgba(0, 66, 37, 0.08);
+    }
+
+    .lang-trigger-btn svg.translate-icon {
+      width: 24px;
+      height: 24px;
+    }
+
+    .lang-trigger-btn .chevron {
+      font-size: 10px;
+      opacity: 0.6;
+      transition: transform 0.2s ease;
+    }
+
+    .lang-selector-container.open .chevron {
+      transform: rotate(180deg);
+    }
+
+    .lang-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      background: #ffffff;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0, 66, 37, 0.06);
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+      min-width: 140px;
+      padding: 6px;
+      animation: dropdownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      transform-origin: top right;
+    }
+
+    @keyframes dropdownFade {
+      from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-4px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .lang-dropdown-menu.show {
+      display: flex;
+    }
+
+    .lang-option-btn {
+      background: transparent;
+      border: none;
+      text-align: left;
+      padding: 8px 12px;
+      font-size: 14.5px;
+      color: var(--text);
+      font-family: inherit;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .lang-option-btn:hover {
+      background: rgba(0, 66, 37, 0.04);
+      color: var(--primary-green);
+    }
+
+    .lang-option-btn.active {
+      font-weight: 600;
+      color: var(--primary-green);
+      background: rgba(0, 66, 37, 0.02);
+    }
   </style>
 </head>
 
@@ -401,8 +496,33 @@
         <h2>Let's start a conversation.</h2>
         <p class="subtitle">It could be magical.</p>
       </div>
-      <img src="./assets/images/varsapradaya-icon.webp" alt="Varsapradaya Icon" class="chat-logo"
-        onerror="this.style.display='none';" />
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <!-- Language Selector Dropdown -->
+        <div class="lang-selector-container" id="lang-selector-container">
+          <button class="lang-trigger-btn" id="lang-trigger-btn" onclick="toggleLangDropdown()" aria-label="Select language">
+            <svg class="translate-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 8h10"></path>
+              <path d="M10 4v4"></path>
+              <path d="M6 14c1.5-2.5 3.5-4 5-5"></path>
+              <path d="M11 9c-1 2-2.5 3.5-4.5 4.5"></path>
+              <path d="M22 21l-4.5-9-4.5 9"></path>
+              <path d="M14 18h8"></path>
+            </svg>
+            <span id="selected-lang-label" style="font-size: 14px; font-weight: 500; margin-left: 2px;">English</span>
+            <span class="chevron">&#9662;</span>
+          </button>
+          <div class="lang-dropdown-menu" id="lang-dropdown-menu">
+            <button class="lang-option-btn active" data-lang-code="en" onclick="selectLanguage('en', 'English', 'English')">English</button>
+            <button class="lang-option-btn" data-lang-code="hi" onclick="selectLanguage('hi', 'Hindi', 'हिन्दी')">हिन्दी</button>
+            <button class="lang-option-btn" data-lang-code="te" onclick="selectLanguage('te', 'Telugu', 'తెలుగు')">తెలుగు</button>
+            <button class="lang-option-btn" data-lang-code="ta" onclick="selectLanguage('ta', 'Tamil', 'தமிழ்')">தமிழ்</button>
+            <button class="lang-option-btn" data-lang-code="kn" onclick="selectLanguage('kn', 'Kannada', 'ಕನ್ನಡ')">ಕನ್ನಡ</button>
+            <button class="lang-option-btn" data-lang-code="ml" onclick="selectLanguage('ml', 'Malayalam', 'മലയാളം')">മലയാളം</button>
+          </div>
+        </div>
+        <img src="./assets/images/varsapradaya-icon.webp" alt="Varsapradaya Icon" class="chat-logo"
+          onerror="this.style.display='none';" />
+      </div>
     </div>
 
     <!-- Chat Card -->
@@ -412,7 +532,7 @@
         <!-- Initial Onboarding Message -->
         <div class="msg-row bot">
           <div class="avatar bot-avatar">FF</div>
-          <div class="bubble bot">
+          <div class="bubble bot" id="initial-bot-bubble">
             <em>Tell me about yourself —</em> are you a grower, an investor, or here for something else?
           </div>
         </div>
@@ -447,6 +567,198 @@
     let API_BASE = 'http://127.0.0.1:8000/api';
     const thread_id = crypto.randomUUID();
 
+    // Translation Dictionaries
+    const TRANSLATIONS = {
+      en: {
+        title: "Let's start a conversation.",
+        subtitle: "It could be magical.",
+        initialMsg: "<em>Tell me about yourself —</em> are you a grower, an investor, or here for something else?",
+        pills: {
+          grower: "I'm a grower",
+          investor: "I'm an investor",
+          corporate: "Corporate / Partnership",
+          exploring: "Just exploring"
+        },
+        pillMsgs: {
+          grower: "i am a grower",
+          investor: "i am an investor",
+          corporate: "corporate partnership",
+          exploring: "just exploring"
+        },
+        placeholder: "Send us a message. Type Here",
+        lockedPlaceholder: "Conversation ended. Refresh to start a new chat."
+      },
+      hi: {
+        title: "आइए बातचीत शुरू करें।",
+        subtitle: "यह जादुई हो सकता है।",
+        initialMsg: "<em>अपने बारे में बताएं —</em> क्या आप एक उत्पादक हैं, एक निवेशक हैं, या किसी और काम से आए हैं?",
+        pills: {
+          grower: "मैं एक उत्पादक हूँ",
+          investor: "मैं एक निवेशक हूँ",
+          corporate: "कॉर्पोरेट / साझेदारी",
+          exploring: "बस तलाश कर रहा हूँ"
+        },
+        pillMsgs: {
+          grower: "i am a grower",
+          investor: "i am an investor",
+          corporate: "corporate partnership",
+          exploring: "just exploring"
+        },
+        placeholder: "हमें संदेश भेजें। यहाँ लिखें",
+        lockedPlaceholder: "बातचीत समाप्त हो गई। नई बातचीत शुरू करने के लिए रीफ्रेश करें।"
+      },
+      te: {
+        title: "సంభాషణను ప్రారంభిద్దాం.",
+        subtitle: "ఇది అద్భుతంగా ఉంటుంది.",
+        initialMsg: "<em>మీ గురించి చెప్పండి —</em> మీరు పెంపకందారా, పెట్టుబడిదారా లేదా మరేదైనా కారణంతో వచ్చారా?",
+        pills: {
+          grower: "నేను పెంపకందారుడిని",
+          investor: "నేను పెట్టుబడిదారుడిని",
+          corporate: "కార్పొరేట్ / భాగస్వామ్యం",
+          exploring: "ఊరికే చూస్తున్నాను"
+        },
+        pillMsgs: {
+          grower: "i am a grower",
+          investor: "i am an investor",
+          corporate: "corporate partnership",
+          exploring: "just exploring"
+        },
+        placeholder: "మాకు సందేశం పంపండి. ఇక్కడ టైప్ చేయండి",
+        lockedPlaceholder: "సంభాషణ ముగిసింది. కొత్త చాట్ ప్రారంభించడానికి రీఫ్రెష్ చేయండి."
+      },
+      ta: {
+        title: "உரையாடலைத் தொடங்குவோம்.",
+        subtitle: "இது மாயாஜாலமாக இருக்கலாம்.",
+        initialMsg: "<em>உங்களைப் பற்றிச் சொல்லுங்கள் —</em> நீங்கள் ஒரு பயிர் வளர்ப்பவரா, முதலீட்டாளரா அல்லது வேறு எதற்காவது வந்துள்ளீர்களா?",
+        pills: {
+          grower: "நான் ஒரு பயிர் வளர்ப்பவர்",
+          investor: "நான் ஒரு முதலீட்டாளர்",
+          corporate: "கார்ப்பரேட் / கூட்டாண்மை",
+          exploring: "சும்மா பார்க்கிறேன்"
+        },
+        pillMsgs: {
+          grower: "i am a grower",
+          investor: "i am an investor",
+          corporate: "corporate partnership",
+          exploring: "just exploring"
+        },
+        placeholder: "எங்களுக்கு ஒரு செய்தி அனுப்புங்கள். இங்கே தட்டச்சு செய்க",
+        lockedPlaceholder: "உரையாடல் முடிந்தது. புதிய அரட்டையைத் தொடங்க புதுப்பிக்கவும்."
+      },
+      kn: {
+        title: "ಸಂಭಾಷಣೆಯನ್ನು ಪ್ರಾರಂಭಿಸೋಣ.",
+        subtitle: "ಇದು ಮಾಂತ್ರಿಕವಾಗಿರಬಹುದು.",
+        initialMsg: "<em>ನಿಮ್ಮ ಬಗ್ಗೆ ತಿಳಿಸಿ —</em> ನೀವು ಬೆಳೆಗಾರರೇ, ಹೂಡಿಕೆದಾರರೇ ಅಥವಾ ಬೇರೆ ಯಾವುದಕ್ಕಾದರೂ ಬಂದಿದ್ದೀರಾ?",
+        pills: {
+          grower: "ನಾನು ಬೆಳೆಗಾರ",
+          investor: "ನಾನು ಹೂಡಿಕೆದಾರ",
+          corporate: "ಕಾರ್ಪೊರೇಟ್ / ಪಾಲುದಾರಿಕೆ",
+          exploring: "ಸುಮ್ಮನೆ ಅನ್ವೇಷಿಸುತ್ತಿದ್ದೇನೆ"
+        },
+        pillMsgs: {
+          grower: "i am a grower",
+          investor: "i am an investor",
+          corporate: "corporate partnership",
+          exploring: "just exploring"
+        },
+        placeholder: "ನಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ. ಇಲ್ಲಿ ಟೈಪ್ ಮಾಡಿ",
+        lockedPlaceholder: "ಸಂಭಾಷಣೆ ಮುಗಿದಿದೆ. ಹೊಸ ಚಾಟ್ ಪ್ರಾರಂಭಿಸಲು ರಿಫ್ರೆಶ್ ಮಾಡಿ."
+      },
+      ml: {
+        title: "നമുക്കൊരു സംഭാഷണം ആരംഭിക്കാം.",
+        subtitle: "ഇത് മാന്ത്രികമായേക്കാം.",
+        initialMsg: "<em>നിങ്ങളെക്കുറിച്ച് പറയൂ —</em> നിങ്ങൾ ഒരു കൃഷിക്കാരനാണോ, നിക്ഷേപകനാണോ അതോ മറ്റെന്തിനെങ്കിലും വന്നതാണോ?",
+        pills: {
+          grower: "ഞാൻ ഒരു കൃഷിക്കാരനാണ്",
+          investor: "ഞാൻ ഒരു നിക്ഷേപകനാണ്",
+          corporate: "കോർപ്പറേറ്റ് / പങ്കാളിത്തം",
+          exploring: "വെറുതെ തിരയുന്നു"
+        },
+        pillMsgs: {
+          grower: "i am a grower",
+          investor: "i am an investor",
+          corporate: "corporate partnership",
+          exploring: "just exploring"
+        },
+        placeholder: "ഞങ്ങൾക്ക് ഒരു സന്ദേശം അയക്കുക. ഇവിടെ ടൈപ്പ് ചെയ്യുക",
+        lockedPlaceholder: "സംഭാഷണം അവസാനിച്ചു. പുതിയ ചാറ്റ് ആരംഭിക്കാൻ റീഫ്രഷ് ചെയ്യുക."
+      }
+    };
+
+    // Language State
+    let currentLang = {
+      code: 'en',
+      name: 'English',
+      nativeName: 'English'
+    };
+
+    function toggleLangDropdown() {
+      const menu = document.getElementById('lang-dropdown-menu');
+      const container = document.getElementById('lang-selector-container');
+      menu.classList.toggle('show');
+      container.classList.toggle('open');
+    }
+
+    function selectLanguage(code, name, nativeName) {
+      currentLang = { code, name, nativeName };
+      
+      // Update active styling in dropdown
+      const buttons = document.querySelectorAll('.lang-option-btn');
+      buttons.forEach(btn => {
+        if (btn.getAttribute('data-lang-code') === code) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      // Update label in the trigger button to show selected language
+      document.getElementById('selected-lang-label').innerText = nativeName;
+      
+      // Close dropdown
+      const menu = document.getElementById('lang-dropdown-menu');
+      const container = document.getElementById('lang-selector-container');
+      menu.classList.remove('show');
+      container.classList.remove('open');
+
+      // Update static text elements in UI
+      const t = TRANSLATIONS[code] || TRANSLATIONS.en;
+      document.querySelector('.conversation-header h2').innerText = t.title;
+      document.querySelector('.conversation-header .subtitle').innerText = t.subtitle;
+      
+      const initialBubble = document.getElementById('initial-bot-bubble');
+      if (initialBubble) {
+        initialBubble.innerHTML = t.initialMsg;
+      }
+      
+      const chatInput = document.getElementById('chat-input');
+      if (chatInput && !chatInput.disabled) {
+        chatInput.placeholder = t.placeholder;
+      } else if (chatInput && chatInput.disabled) {
+        chatInput.placeholder = t.lockedPlaceholder;
+      }
+
+      // Re-render pills dynamically if visible to reflect selected language
+      const pills = document.getElementById('chat-onboarding-pills');
+      if (pills && pills.style.display !== 'none') {
+        showPills();
+      }
+      
+      console.log("Language changed to:", currentLang);
+    }
+
+    // Close dropdown on click outside
+    window.addEventListener('click', (e) => {
+      const container = document.getElementById('lang-selector-container');
+      if (container && !container.contains(e.target)) {
+        const menu = document.getElementById('lang-dropdown-menu');
+        if (menu) {
+          menu.classList.remove('show');
+          container.classList.remove('open');
+        }
+      }
+    });
+
     async function detectApiPort() {
       try {
         const res = await fetch('http://127.0.0.1:8000/api/health');
@@ -479,18 +791,24 @@
 
     // ─── Show/Hide Onboarding Pills ───
     function showPills() {
+      const t = TRANSLATIONS[currentLang.code] || TRANSLATIONS.en;
       let pills = document.getElementById('chat-onboarding-pills');
       if (!pills) {
         pills = document.createElement('div');
         pills.id = 'chat-onboarding-pills';
         pills.className = 'onboarding-pills';
-        pills.innerHTML = `
-          <button class="pill-btn" onclick="clickPill('grower', 'i am a grower', '🌱 Grower Advisor')">I'm a grower</button>
-          <button class="pill-btn" onclick="clickPill('investor', 'i am an investor', '💰 Investor Advisor')">I'm an investor</button>
-          <button class="pill-btn" onclick="clickPill('corporate', 'corporate partnership', '🏢 Business Advisor')">Corporate / Partnership</button>
-          <button class="pill-btn" onclick="clickPill('exploring', 'just exploring', '🔍 Explorer Guide')">Just exploring</button>
-        `;
       }
+      pills.innerHTML = '';
+      
+      const keys = ['grower', 'investor', 'corporate', 'exploring'];
+      keys.forEach(key => {
+        const btn = document.createElement('button');
+        btn.className = 'pill-btn';
+        btn.innerText = t.pills[key];
+        btn.onclick = () => clickPill(key, t.pillMsgs[key], t.pills[key]);
+        pills.appendChild(btn);
+      });
+      
       pills.style.display = 'flex';
       insertBeforeTyping(pills);
       scrollToBottom();
@@ -584,7 +902,13 @@
         const res = await fetch(`${API_BASE}/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ thread_id, message }),
+          body: JSON.stringify({ 
+            thread_id, 
+            message,
+            language_code: currentLang.code,
+            language_name: currentLang.name,
+            language_native_name: currentLang.nativeName
+          }),
         });
 
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -621,10 +945,11 @@
 
     // ─── Helpers ───
     function lockInput() {
+      const t = TRANSLATIONS[currentLang.code] || TRANSLATIONS.en;
       const input = document.getElementById('chat-input');
       const sendBtn = document.getElementById('send-btn');
       input.disabled = true;
-      input.placeholder = "Conversation ended. Refresh to start a new chat.";
+      input.placeholder = t.lockedPlaceholder;
       input.style.cursor = "not-allowed";
       sendBtn.disabled = true;
       sendBtn.style.cursor = "not-allowed";
