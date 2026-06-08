@@ -119,7 +119,36 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
 
 ---
 
-## Step 8: Manage Server Lifespan with Systemd
+## Step 8: Docker-Based Deployment (Recommended Alternative)
+
+Instead of setting up Python virtual environments and Systemd services manually, you can use the newly created Docker configurations to deploy the application in a self-contained container.
+
+### 1. Ensure Prerequisites on the Production Server:
+- **Docker** and **Docker Compose** installed.
+- Your production `.env` file populated with production database, Qdrant URLs, and API keys.
+- Your Google Cloud credentials file `varsapradaya-credentials.json` placed in the project root directory.
+
+### 2. Build and Start the Application in Background Mode:
+Run the following command on your production server:
+```bash
+docker compose up -d --build
+```
+> **Detached Mode (`-d`)**: This starts the container in the background. You can safely close your terminal or laptop, and the chatbot will continue running.
+
+### 3. Monitor Production Logs:
+To check if the database migrations applied correctly and the server is running:
+```bash
+docker compose logs -f
+```
+
+### 4. Manage Container Lifespan:
+- **Stop the service**: `docker compose down`
+- **Restart the service**: `docker compose restart`
+- **Check service status**: `docker compose ps`
+
+---
+
+## Step 9: Manage Server Lifespan with Systemd
 
 To keep the application running continuously in the background and ensure it automatically restarts if the server reboots or crashes, create a systemd service:
 
@@ -153,7 +182,7 @@ To keep the application running continuously in the background and ensure it aut
 
 ---
 
-## Step 9: Configure Nginx as a Reverse Proxy with SSL (HTTPS)
+## Step 10: Configure Nginx as a Reverse Proxy with SSL (HTTPS)
 
 Serve the chatbot backend securely over HTTPS:
 
@@ -185,10 +214,15 @@ Serve the chatbot backend securely over HTTPS:
 4. Enable the site and restart Nginx:
    ```bash
    sudo ln -s /etc/nginx/sites-available/faq_chatbot /etc/nginx/sites-enabled/
+   ```
+
+5. Test Nginx and restart:
+   ```bash
+   sudo nginx -t
    sudo systemctl restart nginx
    ```
 
-5. Request and install an SSL certificate:
+6. Request and install an SSL certificate:
    ```bash
    sudo certbot --nginx -d yourdomain.com
    ```

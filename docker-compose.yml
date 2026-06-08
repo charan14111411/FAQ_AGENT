@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: faq-chatbot-backend
+    restart: always
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      # Persists backend log files to the host machine for easy inspection
+      - ./logs:/app/logs
+      # Mounts the GCP service account credentials read-only for Gemini authentication
+      - ./varsapradaya-credentials.json:/app/varsapradaya-credentials.json:ro
