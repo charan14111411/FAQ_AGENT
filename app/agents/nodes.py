@@ -362,6 +362,16 @@ async def collect_phone_node(state: ChatState) -> dict:
                 db_name = cleaned_name
                 logger.info(f"Updated user name from '{existing_user[1]}' to '{cleaned_name}' for user_id={user_id}")
 
+            # Get last session timestamp before creating new session to show last visit date
+            from sqlalchemy import text
+            query_last_session = "SELECT started_at FROM sessions WHERE user_id = :user_id ORDER BY started_at DESC LIMIT 1"
+            res_last_session = await db.execute(text(query_last_session), {"user_id": user_id})
+            row_last_session = res_last_session.fetchone()
+            
+            last_visit_str = None
+            if row_last_session and row_last_session[0]:
+                last_visit_str = row_last_session[0].strftime("%B %d, %Y")
+
             # Create session directly
             session = await create_session(db, user_id, category, is_returning=True)
             session_id = str(session.id)
@@ -384,12 +394,21 @@ async def collect_phone_node(state: ChatState) -> dict:
                     logger.warning(f"Could not save prospect_id to session: {crm_err}")
 
             # Welcome back reply
-            prompt = (
-                f"Welcome back the returning user whose name is {db_name}. "
-                f"They are now engaging as a {category} audience member. "
-                "Keep the welcome warm but extremely short (under 15 words). "
-                "Ask what you can help with today."
-            )
+            if last_visit_str:
+                prompt = (
+                    f"Welcome back the returning user whose name is {db_name}. "
+                    f"Mention warmly that they last visited us on {last_visit_str} to make it personalized. "
+                    f"They are now engaging as a {category} audience member. "
+                    "Keep the welcome warm but short and natural (under 25 words). "
+                    "Ask what you can help with today."
+                )
+            else:
+                prompt = (
+                    f"Welcome back the returning user whose name is {db_name}. "
+                    f"They are now engaging as a {category} audience member. "
+                    "Keep the welcome warm but extremely short (under 15 words). "
+                    "Ask what you can help with today."
+                )
             reply = await _generate_dynamic_reply(prompt, category=category)
 
             return {
@@ -788,8 +807,8 @@ async def _answer_faq(state: ChatState, user_msg: str) -> dict:
             "or 'I don't have feelings'. You are always Varsapradaya's advisor.\n"
             "6. POLITENESS ALWAYS: Every response — even a refusal — must be warm, "
             "helpful, and end with an invitation to continue the conversation.\n"
-            "7. BE CONCISE: Keep your answers extremely short, direct, and concise (maximum 2-3 sentences, under 60 words total). "
-            "Do not write long explanations or repeat yourself.\n"
+            # "7. BE CONCISE: Keep your answers extremely short, direct, and concise (maximum 2-3 sentences, under 60 words total). "
+            "7. FORMAT IN BULLET POINTS: You must always present your final answer in clean, short bullet points using standard markdown bullets (each starting with a hyphen and a space: '- '). Keep the response extremely direct, concise, and under 3 bullets total.\n"
             f"8. ROLES: The user is an external {category.upper()} (e.g. farmer, investor, or partner). "
             "You are their advisor/guide representing Varsapradaya. "
             "Never tell the user that they are the Advisor or that they represent Varsapradaya. "
