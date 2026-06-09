@@ -182,13 +182,18 @@
       word-break: break-word;
     }
 
-    /* Bot message styled as plain text next to avatar */
+    /* Bot message styled as a premium card banner */
     .bubble.bot {
-      background: transparent;
-      border: none;
-      box-shadow: none;
+      background: linear-gradient(135deg, rgba(0, 66, 37, 0.02) 0%, rgba(146, 187, 55, 0.03) 100%), #ffffff;
+      border: 1px solid rgba(0, 66, 37, 0.08);
+      border-left: 4px solid var(--accent-green);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      box-shadow: 0 4px 16px rgba(0, 66, 37, 0.04);
       color: var(--text);
-      padding: 4px 0;
+      width: 100%;
+      max-width: 85%;
+      margin: 6px 0;
     }
 
     .bubble.bot em {
@@ -220,6 +225,36 @@
 
     .bubble li {
       margin: 4px 0;
+    }
+
+    /* FAQ Title & Body Formatting inside bot bubble */
+    .faq-banner-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 700;
+      color: var(--primary-green);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      opacity: 0.85;
+    }
+
+    .faq-banner-body {
+      font-size: 14.5px;
+      line-height: 1.65;
+    }
+
+    .faq-banner-body ul {
+      margin: 8px 0 0 0;
+      padding-left: 20px;
+      list-style-type: disc;
+    }
+
+    .faq-banner-body li {
+      margin: 6px 0;
+      color: var(--text);
     }
 
     /* ─── Onboarding Pills ─── */
@@ -411,9 +446,19 @@
       <div class="chat-window" id="chat-window">
         <!-- Initial Onboarding Message -->
         <div class="msg-row bot">
-          <div class="avatar bot-avatar">FF</div>
+          <div class="avatar bot-avatar" style="background: var(--primary-green); color: #ffffff;">FF</div>
           <div class="bubble bot">
-            <em>Tell me about yourself —</em> are you a grower, an investor, or here for something else?
+            <div class="faq-banner-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px; color: var(--accent-green);">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              <span>Varsapradaya Guide</span>
+            </div>
+            <div class="faq-banner-body">
+              <em>Tell me about yourself —</em> are you a grower, an investor, or here for something else?
+            </div>
           </div>
         </div>
 
@@ -537,12 +582,46 @@
     }
 
     // ─── Append bot bubble ───
-    function appendBotBubble(text, agentCategory) {
+    function appendBotBubble(text, agentCategory, step) {
       const row = document.createElement('div');
       row.className = 'msg-row bot';
+      
+      let headerTitle = "Varsapradaya Guide";
+      let headerIcon = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px; color: var(--accent-green);">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+      `;
+
+      if (step === 'chatting') {
+        headerTitle = "Advisory Response";
+        headerIcon = `
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px; color: var(--accent-green);">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+        `;
+      } else if (step === 'ended') {
+        headerTitle = "System Notification";
+        headerIcon = `
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px; color: #ff3b30;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        `;
+      }
+
       row.innerHTML = `
-        <div class="avatar bot-avatar">FF</div>
-        <div class="bubble bot">${formatText(text)}</div>
+        <div class="avatar bot-avatar" style="background: var(--primary-green); color: #ffffff;">FF</div>
+        <div class="bubble bot">
+          <div class="faq-banner-title">
+            ${headerIcon}
+            <span>${headerTitle}</span>
+          </div>
+          <div class="faq-banner-body">${formatText(text)}</div>
+        </div>
       `;
       insertBeforeTyping(row);
       scrollToBottom();
@@ -596,7 +675,7 @@
           currentAgent = data.agent.replace('_agent', '');
         }
 
-        appendBotBubble(data.reply, currentAgent);
+        appendBotBubble(data.reply, currentAgent, data.step);
 
         // Control onboarding pills dynamically based on step
         if (data.step === 'start') {
@@ -641,32 +720,61 @@
       // Highlight bold text
       formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-      // Convert list formatting (e.g. * Item) into structured lists
-      if (formatted.includes('\n* ') || formatted.startsWith('* ')) {
+      // Convert list formatting (e.g. * Item or - Item) into structured HTML lists
+      const hasBullet = formatted.includes('\n* ') || formatted.startsWith('* ') || 
+                        formatted.includes('\n- ') || formatted.startsWith('- ') ||
+                        formatted.includes('\n&bull; ') || formatted.startsWith('&bull; ');
+
+      if (hasBullet) {
         const lines = formatted.split('\n');
         let inList = false;
         const resultLines = [];
 
-        for (let line of lines) {
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
           const trimmed = line.trim();
-          if (trimmed.startsWith('* ')) {
+
+          if (trimmed === "") {
+            // Lookahead: if we are currently inside a list and another bullet point follows,
+            // skip the empty line to keep all bullet items unified in a single, tight list.
+            if (inList) {
+              let hasMoreBullets = false;
+              for (let j = i + 1; j < lines.length; j++) {
+                const nextTrimmed = lines[j].trim();
+                if (nextTrimmed !== "") {
+                  if (nextTrimmed.startsWith('* ') || nextTrimmed.startsWith('- ') || nextTrimmed.startsWith('&bull; ')) {
+                    hasMoreBullets = true;
+                  }
+                  break;
+                }
+              }
+              if (hasMoreBullets) {
+                continue;
+              }
+            }
+          }
+
+          const isBulletItem = trimmed.startsWith('* ') || trimmed.startsWith('- ') || trimmed.startsWith('&bull; ');
+          if (isBulletItem) {
             if (!inList) {
-              resultLines.push('<ul style="margin: 8px 0; padding-left: 20px; list-style-type: disc;">');
+              resultLines.push('<ul style="margin: 4px 0; padding-left: 20px; list-style-type: disc;">');
               inList = true;
             }
-            resultLines.push(`<li style="margin: 4px 0;">${trimmed.substring(2)}</li>`);
+            // Extract item content (strip the '* ', '- ', or '&bull; ')
+            const itemText = trimmed.replace(/^(\*\s*|-\s*|&bull;\s*)/, '');
+            resultLines.push(`<li style="margin: 3px 0;">${itemText}</li>`);
           } else {
             if (inList) {
               resultLines.push('</ul>');
               inList = false;
             }
-            resultLines.push(line);
+            resultLines.push(line + '<br>');
           }
         }
         if (inList) {
           resultLines.push('</ul>');
         }
-        formatted = resultLines.join('<br>');
+        formatted = resultLines.join('');
       } else {
         formatted = formatted.replace(/\n/g, '<br>');
       }
