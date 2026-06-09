@@ -16,6 +16,7 @@ from app.db import (
     get_prospect_id_for_user,
     find_user_by_phone,
     update_user_name,
+    update_session_language,
 )
 from app.services.crm import create_crm_prospect
 from app.logger import get_logger
@@ -50,16 +51,73 @@ VALID_CATEGORIES = {"grower", "investor", "corporate", "exploring"}
 
 
 # ---------------------------------------------------------------------------
+# HELPER: Language instruction injector
+# ---------------------------------------------------------------------------
+
+# Supported languages: canonical name → label used in LLM instruction
+_SUPPORTED_LANGUAGES = {
+    "english":   "English",
+    "tamil":     "Tamil (தமிழ்)",
+    "hindi":     "Hindi (हिन्दी)",
+    "kannada":   "Kannada (ಕನ್ನಡ)",
+    "telugu":    "Telugu (తెలుగు)",
+    "malayalam": "Malayalam (മലയാളം)",
+    "urdu":      "Urdu (اردو)",
+}
+
+
+def _get_language_instruction(language: str | None, native_name: str | None = None) -> str:
+    """
+    Returns a concise LLM instruction to respond in the user's preferred language.
+
+    Args:
+        language    : canonical name ('telugu', 'hindi' etc.) — used to look up the label
+        native_name : native script from the frontend (e.g. 'తెలుగు') — if provided,
+                      used directly in the prompt for maximum accuracy.
+    Falls back to empty string (= English, default).
+    """
+    lang = (language or "english").strip().lower()
+    if lang == "english":
+        return ""  # No extra instruction — English is the default
+
+    # Use the native_name sent by the production frontend if available;
+    # otherwise fall back to the built-in label from _SUPPORTED_LANGUAGES.
+    label = _SUPPORTED_LANGUAGES.get(lang)
+    if not label:
+        return ""  # Unknown language — don't inject a rule
+
+    display = native_name.strip() if native_name else label
+
+    return (
+        f"CRITICAL LANGUAGE RULE: The user has selected {display} as their preferred language. "
+        f"You MUST write your ENTIRE response in {display}, INCLUDING greetings and introductory sentences. "
+        f"Even if previous messages in this conversation history are in a different language, you MUST switch to {display} immediately. "
+        f"Do NOT start your message with English phrases like 'Hello there' or 'I am happy to help'. "
+        f"The VERY FIRST word of your response MUST be in {display}. "
+        "Keep the same warm, professional tone, just translated."
+    )
+
+
+# ---------------------------------------------------------------------------
 # HELPER: Generate a dynamic LLM reply (used for onboarding & guardrails)
 # category is passed so the LLM stays in persona even during onboarding
 # ---------------------------------------------------------------------------
 
-async def _generate_dynamic_reply(system_prompt: str, user_input: str = "", category: str = "") -> str:
+async def _generate_dynamic_reply(
+    system_prompt: str,
+    user_input: str = "",
+    category: str = "",
+    language: str | None = None,
+    language_native_name: str | None = None,
+) -> str:
     """
     Generates a conversational reply via LLM.
     - system_prompt: the instruction for the LLM
     - user_input: optionally include user's message for context
     - category: if provided, prepends the persona intro so tone is agent-specific
+    - language: canonical name ('telugu', 'hindi' etc.)
+    - language_native_name: native script ('తెలుగు') from the production frontend;
+                            used directly in the LLM instruction when provided.
     No hardcoded strings. Every reply is LLM-generated.
     """
     base_rules = (
@@ -78,6 +136,11 @@ async def _generate_dynamic_reply(system_prompt: str, user_input: str = "", cate
         full_system = base_rules + persona_intro + "\n\n" + system_prompt
     else:
         full_system = base_rules + system_prompt
+
+    # Inject the language rule at the very end so the LLM pays maximum attention to it
+    lang_instruction = _get_language_instruction(language, native_name=language_native_name)
+    if lang_instruction:
+        full_system += "\n\n" + lang_instruction
 
     messages = [{"role": "system", "content": full_system}]
     if user_input:
@@ -137,6 +200,8 @@ async def classify_entry_node(state: ChatState) -> dict:
     """
     raw = state["user_input"].strip().lower()
     classify_attempts = state.get("classify_attempts", 0)
+    language = state.get("language")
+    language_native_name = state.get("language_native_name")
 
     # Check button click map first (O(1), no LLM)
     category = None
@@ -158,7 +223,7 @@ async def classify_entry_node(state: ChatState) -> dict:
                 "The user sent a message that does not specify if they are a grower, an investor, corporate partner, or just exploring. "
                 "Warmly greet them, and ask them to select one of these categories or specify their role to proceed."
             )
-            reply = await _generate_dynamic_reply(prompt)
+            reply = await _generate_dynamic_reply(prompt, language=language, language_native_name=language_native_name)
             return {
                 "category": None,
                 "step": "start",
@@ -185,7 +250,7 @@ async def classify_entry_node(state: ChatState) -> dict:
         "STRICTLY avoid archaic, overly dramatic, or artificial terms like 'esteemed grower', 'honored partner', or similar fluff. Keep it modern and professional. "
         "Keep the welcome and question concise and under 25 words."
     )
-    reply = await _generate_dynamic_reply(prompt, category=category)
+    reply = await _generate_dynamic_reply(prompt, category=category, language=language, language_native_name=language_native_name)
 
     return {
         "category": category,
@@ -208,47 +273,64 @@ async def classify_entry_node(state: ChatState) -> dict:
 async def collect_name_node(state: ChatState) -> dict:
     raw = state["user_input"].strip()
     category = state.get("category", "exploring")
+    language = state.get("language")
+    language_native_name = state.get("language_native_name")
 
     if not raw:
         prompt = "The user submitted an empty message when asked for their name. Politely ask them to type their full name."
-        reply = await _generate_dynamic_reply(prompt, category=category)
+        reply = await _generate_dynamic_reply(prompt, category=category, language=language, language_native_name=language_native_name)
         return {"reply": reply, "step": "await_name"}
 
-    # Hard validation: must have at least 2 letters, no digits or symbols
-    if len(re.sub(r'[^a-zA-Z]', '', raw)) < 2 or re.search(r'[\d\+\-\*\/=\(\)\!@#\$%\^\&\*]', raw):
+    # Hard validation: must have at least 2 letters (ASCII or any Unicode script — covers
+    # Indian scripts: Telugu, Tamil, Hindi, Kannada, Malayalam, Urdu, etc.)
+    # Also blocks anything with numbers or special symbols.
+    unicode_letter_count = len(re.sub(r'[^\w]', '', raw, flags=re.UNICODE)) - len(re.sub(r'[^\d]', '', raw))
+    if unicode_letter_count < 2 or re.search(r'[\d\+\-\*\/=\(\)\!@#\$%\^\&\*]', raw):
         prompt = (
             f"The user typed '{raw}' in response to the name question. "
             "This contains numbers, symbols, or is too short to be a real name. "
             "Politely point this out and ask them to provide their full name using letters only."
         )
-        reply = await _generate_dynamic_reply(prompt, user_input=raw, category=category)
+        reply = await _generate_dynamic_reply(prompt, user_input=raw, category=category, language=language, language_native_name=language_native_name)
         return {"reply": reply, "step": "await_name"}
 
-    # LLM gibberish/keyboard-mash detection
+    # Multilingual LLM name extraction + validation in one call.
+    # Handles: "na peru kumar" (Telugu), "mera naam Ravi" (Hindi),
+    # "என் பெயர் Priya" (Tamil), "my name is Arun", "I am Suresh", plain "Kumar" etc.
     check_messages = [
         {
             "role": "system",
             "content": (
-                "You are a name validation assistant. "
-                "Determine if the following text is a plausible human name, or obvious gibberish/keyboard mashing. "
-                "Reply with EXACTLY 'VALID' or 'INVALID'. Nothing else."
+                "You are a multilingual name extraction assistant. "
+                "The user was asked for their full name. They may have typed it in any language "
+                "and may have included phrases meaning 'my name is' in that language "
+                "(e.g. 'na peru' in Telugu, 'mera naam' in Hindi, 'என் பெயர்' in Tamil, "
+                "'nanna hesaru' in Kannada, 'mera naam hai' in Urdu, 'my name is' in English, etc.).\n\n"
+                "Your task:\n"
+                "1. Extract ONLY the actual person's name from the input (strip any greeting or 'my name is' prefix in any language).\n"
+                "2. If a valid human name is found, reply with EXACTLY: NAME:<extracted_name>\n"
+                "   Examples: NAME:Kumar   NAME:Priya Sharma   NAME:Ravi Kumar   NAME:రాజు\n"
+                "3. If the input is pure gibberish, keyboard mashing, or contains NO identifiable human name, "
+                "reply with EXACTLY: INVALID\n"
+                "Reply with NOTHING else."
             ),
         },
         {"role": "user", "content": raw},
     ]
-    validation = await _call_llm(check_messages, max_tokens=10, temperature=0.0)
+    extraction = await _call_llm(check_messages, max_tokens=30, temperature=0.0)
+    extraction_reply = extraction["reply"].strip()
 
-    if "INVALID" in validation["reply"].upper():
+    if "INVALID" in extraction_reply.upper() or not extraction_reply.upper().startswith("NAME:"):
         prompt = (
             f"The user typed '{raw}' as their name, which appears to be random characters or gibberish. "
             "Gently but clearly ask them to provide their real full name so you can assist them properly."
         )
-        reply = await _generate_dynamic_reply(prompt, user_input=raw, category=category)
+        reply = await _generate_dynamic_reply(prompt, user_input=raw, category=category, language=language, language_native_name=language_native_name)
         return {"reply": reply, "step": "await_name"}
 
-    # Clean and title-case the name
-    name = re.sub(r"(?i)^(i('m| am)|my name is|this is|hi[,!]?|hello[,!]?)\s*", "", raw).strip()
-    name = name.title() if name else raw.title()
+    # Extract the clean name (strip the "NAME:" prefix returned by LLM)
+    extracted_name = extraction_reply[5:].strip()
+    name = extracted_name.title() if extracted_name and extracted_name.isascii() else (extracted_name or raw.strip())
 
     prompt = (
         f"The user just shared their name: {name}. "
@@ -256,7 +338,7 @@ async def collect_name_node(state: ChatState) -> dict:
         "Reassure them briefly that their contact details are completely secure and needed only for privacy, security, and future offline collaboration. "
         "Keep the entire response extremely short, comforting, and concise (under 30 words)."
     )
-    reply = await _generate_dynamic_reply(prompt, category=category)
+    reply = await _generate_dynamic_reply(prompt, category=category, language=language, language_native_name=language_native_name)
 
     return {
         "name": name,
@@ -296,10 +378,12 @@ async def collect_phone_node(state: ChatState) -> dict:
     raw = state["user_input"].strip()
     category = state.get("category", "exploring")
     attempts = state.get("phone_attempts", 0) + 1
+    language = state.get("language")
+    language_native_name = state.get("language_native_name")
 
     if not raw:
         prompt = "The user submitted an empty message when asked for their phone number. Politely ask them to type their phone number."
-        reply = await _generate_dynamic_reply(prompt, category=category)
+        reply = await _generate_dynamic_reply(prompt, category=category, language=language, language_native_name=language_native_name)
         return {"reply": reply, "step": "await_phone", "phone_attempts": attempts}
 
     # Clean and extract valid phone number from input (non-hardcoded regex-based extraction)
@@ -339,7 +423,7 @@ async def collect_phone_node(state: ChatState) -> dict:
             "If they are just typing a bad phone number, typing nonsense, or mashing the keyboard (including entering a number with fewer than 10 digits), "
             "reassure them that we keep their mobile number private and secure, explain that it is strictly needed for secure authentication and offline updates, and politely ask them to try again (e.g., +91 9876543210 format)."
         )
-        reply = await _generate_dynamic_reply(prompt, user_input=raw, category=category)
+        reply = await _generate_dynamic_reply(prompt, user_input=raw, category=category, language=language, language_native_name=language_native_name)
         return {"reply": reply, "step": "await_phone", "phone_attempts": attempts}
 
     # ── VALID PHONE NUMBER ──
@@ -374,7 +458,7 @@ async def collect_phone_node(state: ChatState) -> dict:
                 last_visit_str = row_last_session[0].strftime("%B %d, %Y")
 
             # Create session directly
-            session = await create_session(db, user_id, category, is_returning=True)
+            session = await create_session(db, user_id, category, is_returning=True, language=state.get("language"))
             session_id = str(session.id)
 
             await write_log(
@@ -410,7 +494,7 @@ async def collect_phone_node(state: ChatState) -> dict:
                     "Keep the welcome warm but extremely short (under 15 words). "
                     "Ask what you can help with today."
                 )
-            reply = await _generate_dynamic_reply(prompt, category=category)
+            reply = await _generate_dynamic_reply(prompt, category=category, language=language, language_native_name=language_native_name)
 
             return {
                 "phone": normalized_phone,
@@ -435,7 +519,7 @@ async def collect_phone_node(state: ChatState) -> dict:
         "Reassure them briefly that their email is kept secure and will only be used to send them their chat transcript and updates. "
         "Keep the response extremely brief, reassuring, and concise (under 25 words)."
     )
-    reply = await _generate_dynamic_reply(prompt, category=category)
+    reply = await _generate_dynamic_reply(prompt, category=category, language=language, language_native_name=language_native_name)
 
     return {
         "phone": normalized_phone,
@@ -453,10 +537,12 @@ async def collect_email_node(state: ChatState) -> dict:
     raw = state["user_input"].strip().lower()
     category = state.get("category", "exploring")
     attempts = state.get("email_attempts", 0) + 1
+    language = state.get("language")
+    language_native_name = state.get("language_native_name")
 
     if not raw:
         prompt = "The user submitted an empty message when asked for their email. Politely ask them to type their email address."
-        reply = await _generate_dynamic_reply(prompt, category=category)
+        reply = await _generate_dynamic_reply(prompt, category=category, language=language, language_native_name=language_native_name)
         return {"reply": reply, "step": "await_email", "email_attempts": attempts}
 
     if not re.match(EMAIL_REGEX, raw):
@@ -470,7 +556,7 @@ async def collect_email_node(state: ChatState) -> dict:
             "If they are just typing an invalid email format or typing nonsense, "
             "reassure them that we keep their email address private and secure, explain that it is strictly needed to send them their chat transcript and updates, and politely ask them to try again (e.g., yourname@example.com)."
         )
-        reply = await _generate_dynamic_reply(prompt, user_input=raw, category=category)
+        reply = await _generate_dynamic_reply(prompt, user_input=raw, category=category, language=language, language_native_name=language_native_name)
         return {"reply": reply, "step": "await_email", "email_attempts": attempts}
 
     return await _process_email_and_start_chat(state, raw, category)
@@ -488,7 +574,7 @@ async def _process_email_and_start_chat(state: ChatState, email: str, category: 
         user_id = str(new_user.id)
         phone = state.get("phone", "")
 
-        session = await create_session(db, user_id, category, is_returning=False)
+        session = await create_session(db, user_id, category, is_returning=False, language=state.get("language"))
         session_id = str(session.id)
 
         await write_log(
@@ -516,7 +602,7 @@ async def _process_email_and_start_chat(state: ChatState, email: str, category: 
             "Briefly tell them they are all set, then ask what you can help with today. "
             "Keep the response under 15 words."
         )
-        reply = await _generate_dynamic_reply(prompt, category=category)
+        reply = await _generate_dynamic_reply(prompt, category=category, language=state.get("language"))
 
         return {
             "email": email,
@@ -603,6 +689,8 @@ async def chat_node(state: ChatState) -> dict:
     category = state.get("category", "exploring")
     current_attempts = state.get("farewell_attempts", 0)
     session_id = state.get("session_id")
+    language = state.get("language")
+    language_native_name = state.get("language_native_name")
 
     # 1. Fetch recent history from the database to build conversation context
     history_context = ""
@@ -680,7 +768,7 @@ async def chat_node(state: ChatState) -> dict:
                     "warm, and polite check to see if there is one final thing you can do before wrapping up. "
                     "Keep it distinct from before and under 15 words."
                 )
-            reply = await _generate_dynamic_reply(prompt, category=category)
+            reply = await _generate_dynamic_reply(prompt, category=category, language=language, language_native_name=language_native_name)
 
             # Persist user's message and assistant's reply to DB
             if session_id:
@@ -715,7 +803,7 @@ async def chat_node(state: ChatState) -> dict:
                 f"The user has confirmed they are done. Give a warm, final closing goodbye. "
                 "Keep it extremely brief and concise (under 15 words)."
             )
-            reply = await _generate_dynamic_reply(prompt, category=category)
+            reply = await _generate_dynamic_reply(prompt, category=category, language=language, language_native_name=language_native_name)
 
             # Persist user's message and final reply to DB
             if session_id:
@@ -753,6 +841,9 @@ async def _answer_faq(state: ChatState, user_msg: str) -> dict:
     """
     start_time = time.time()
     category = state["category"]
+    language = state.get("language")
+    language_native_name = state.get("language_native_name")
+    lang_instruction = _get_language_instruction(language, native_name=language_native_name)
 
     async with AsyncSessionLocal() as db:
         # 1. Persist user message
@@ -820,12 +911,19 @@ async def _answer_faq(state: ChatState, user_msg: str) -> dict:
         )
 
         if context and context.strip():
-            system_prompt += f"\nMOST RELEVANT FAQ CONTEXT FOR THIS QUESTION:\n{context}"
+            system_prompt += f"\n\nMOST RELEVANT FAQ CONTEXT FOR THIS QUESTION:\n{context}"
 
         # 5. Build message list
         messages = [{"role": "system", "content": system_prompt}]
         messages.extend(history[:-1])  # history minus the message we just saved
-        messages.append({"role": "user", "content": user_msg})
+        
+        # Inject the language rule at the VERY END of the current user's message,
+        # so it overrides any language patterns established in the conversation history.
+        final_user_msg = user_msg
+        if lang_instruction:
+            final_user_msg += f"\n\n[SYSTEM INSTRUCTION: {lang_instruction}]"
+            
+        messages.append({"role": "user", "content": final_user_msg})
 
         # Token & temperature config per agent
         # Output tokens lowered: LLM is instructed to reply in 2-3 sentences max

@@ -29,4 +29,6 @@ class ChatState(TypedDict):
     email_attempts: int             # Invalid email entry counter
     farewell_attempts: int          # Counter for polite farewell/end attempts
     classify_attempts: int          # Counter for category classification retries
+    language:              Optional[str]  # Canonical language name: 'telugu', 'hindi', 'english' etc.
+    language_native_name:  Optional[str]  # Native script: 'తెలుగు', 'हिन्दी' etc. Used in LLM prompts
 
