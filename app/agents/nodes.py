@@ -602,7 +602,7 @@ async def _process_email_and_start_chat(state: ChatState, email: str, category: 
             "Briefly tell them they are all set, then ask what you can help with today. "
             "Keep the response under 15 words."
         )
-        reply = await _generate_dynamic_reply(prompt, category=category, language=state.get("language"))
+        reply = await _generate_dynamic_reply(prompt, category=category, language=state.get("language"), language_native_name=state.get("language_native_name"))
 
         return {
             "email": email,
@@ -627,22 +627,47 @@ async def _process_email_and_start_chat(state: ChatState, email: str, category: 
 
 # Clear farewell keywords — if user's entire trimmed message is one of these,
 # we instantly classify as END without any LLM call.
+# Includes common farewell phrases in supported Indian languages.
 _FAREWELL_EXACT = {
+    # English
     "bye", "goodbye", "good bye", "exit", "quit", "close", "done",
     "no", "nope", "nah", "nothing", "none", "no thanks", "no thank you",
     "ok", "okay", "ok thanks", "ok thank you", "thanks", "thank you",
     "ok bye", "okay bye", "that's all", "thats all", "that is all",
     "sure", "ok sure", "alright", "all good", "got it", "noted",
     "i'm done", "im done", "i am done", "no more", "stop",
+    # Telugu
+    "బై", "బాయ్", "వద్దు", "చాలు", "ధన్యవాదాలు", "సరే", "సరే బై",
+    "ఇంకేం వద్దు", "అంతే", "నాకు ఇంకేం అక్కర్లేదు",
+    # Hindi
+    "बाय", "अलविदा", "नहीं", "धन्यवाद", "शुक्रिया", "ठीक है", "बस",
+    "ठीक", "नहीं चाहिए", "और कुछ नहीं", "बस इतना ही",
+    # Tamil
+    "பை", "நன்றி", "போதும்", "வேண்டாம்", "சரி", "சரி பை",
+    # Kannada
+    "ಬೈ", "ಧನ್ಯವಾದ", "ಸಾಕು", "ಬೇಡ", "ಸರಿ", "ಸರಿ ಬೈ",
+    # Malayalam
+    "ബൈ", "നന്ദി", "മതി", "വേണ്ട", "ശരി", "ശരി ബൈ",
 }
 
 # Phrases that — if the message *starts with* or *contains* them — strongly
-# signal farewell intent.
+# signal farewell intent. Includes Indian language phrases.
 _FAREWELL_CONTAINS = [
+    # English
     "bye", "goodbye", "good bye", "see you", "see ya", "take care",
     "have a good", "have a nice", "thanks for", "thank you for",
     "no more questions", "nothing else", "that's all", "thats all",
     "i'm done", "im done", "i am done",
+    # Telugu
+    "ధన్యవాదాలు", "బై", "వద్దు", "చాలు", "ఇంకేం వద్దు",
+    # Hindi
+    "अलविदा", "धन्यवाद", "शुक्रिया", "नहीं चाहिए", "बस इतना ही",
+    # Tamil
+    "நன்றி", "போதும்", "வேண்டாம்",
+    # Kannada
+    "ಧನ್ಯವಾದ", "ಸಾಕು", "ಬೇಡ",
+    # Malayalam
+    "നന്ദി", "മതി", "വേണ്ട",
 ]
 
 def _quick_farewell_check(text: str) -> str | None:
@@ -927,7 +952,12 @@ async def _answer_faq(state: ChatState, user_msg: str) -> dict:
 
         # Token & temperature config per agent
         # Output tokens lowered: LLM is instructed to reply in 2-3 sentences max
-        TOKEN_LIMITS = {"grower": 200, "investor": 250, "corporate": 250, "exploring": 200}
+        # Non-English languages (Telugu, Tamil, Malayalam etc.) tokenize into ~2x more
+        # tokens due to Unicode byte-pair encoding — so we increase limits to avoid truncation.
+        is_non_english = language and language.strip().lower() != "english"
+        TOKEN_LIMITS_EN    = {"grower": 200, "investor": 250, "corporate": 250, "exploring": 200}
+        TOKEN_LIMITS_NOENG = {"grower": 350, "investor": 400, "corporate": 400, "exploring": 350}
+        TOKEN_LIMITS = TOKEN_LIMITS_NOENG if is_non_english else TOKEN_LIMITS_EN
         TEMPS       = {"grower": 0.3, "investor": 0.4, "corporate": 0.3, "exploring": 0.4}
 
         # 6. LLM call

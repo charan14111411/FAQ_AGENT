@@ -24,27 +24,31 @@ _LANG_CODE_TO_NAME: dict[str, str] = {
 }
 
 
-def _resolve_language(req: ChatRequest) -> tuple[str, str | None]:
+def _resolve_language(req: ChatRequest) -> tuple[str, str | None, str | None]:
     """
-    Returns (canonical_language_name, language_native_name).
+    Returns (canonical_language_name, language_native_name, language_code).
 
     Priority:
       1. language_code  (ISO 639-1 from production frontend, e.g. 'te')
       2. language       (legacy full-name from HTML mockup, e.g. 'telugu')
-      3. Default        → ('english', None)
+      3. Default        → ('english', None, 'en')
 
     canonical_language_name  : 'telugu', 'hindi', etc.
     language_native_name     : 'తెలుగు', 'हिन्दी', etc.  Used verbatim in LLM prompts.
+    language_code            : 'te', 'hi', 'en', etc.  ISO 639-1 code for programmatic use.
     """
     if req.language_code:
         code = req.language_code.strip().lower()
         name = _LANG_CODE_TO_NAME.get(code, "english")
-        return name, (req.language_native_name or None)
+        return name, (req.language_native_name or None), code
 
     if req.language and req.language.strip().lower() not in ("", "english", "en"):
-        return req.language.strip().lower(), (req.language_native_name or None)
+        # Reverse-lookup the code from the canonical name for legacy frontend
+        lang_name = req.language.strip().lower()
+        code = next((k for k, v in _LANG_CODE_TO_NAME.items() if v == lang_name), None)
+        return lang_name, (req.language_native_name or None), code
 
-    return "english", None
+    return "english", None, "en"
 
 
 # ---------------------------------------------------------------------------
@@ -102,7 +106,7 @@ async def handle_chat(req: ChatRequest, request: Request, background_tasks: Back
         config = {"configurable": {"thread_id": req.thread_id}}
 
         # ── 1. Resolve language from request ─────────────────────────────────
-        language, language_native_name = _resolve_language(req)
+        language, language_native_name, language_code = _resolve_language(req)
 
         # ── 2. Strip language prefix injected by production frontend ─────────
         clean_message = _strip_language_prefix(req.message)
@@ -156,6 +160,7 @@ async def handle_chat(req: ChatRequest, request: Request, background_tasks: Back
             "step": current_step,
             "thread_id": req.thread_id,
             "language": language,
+            "language_code": language_code,              # ISO 639-1 code (e.g. "te") — stored for programmatic use
             "language_native_name": language_native_name,  # e.g. "తెలుగు" — used in LLM prompt
         }
 
