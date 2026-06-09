@@ -299,7 +299,33 @@ async def collect_phone_node(state: ChatState) -> dict:
         reply = await _generate_dynamic_reply(prompt, category=category)
         return {"reply": reply, "step": "await_phone", "phone_attempts": attempts}
 
-    if not re.match(PHONE_REGEX, raw):
+    # Clean and extract valid phone number from input (non-hardcoded regex-based extraction)
+    extracted = None
+
+    # 1. Search for a substring that looks like a phone number (e.g. sequence of digits, spaces, hyphens)
+    match = re.search(r"\+?[\d\s\-]{10,20}", raw)
+    if match:
+        matched_str = match.group(0).strip()
+        digits = "".join(c for c in matched_str if c.isdigit())
+        if 10 <= len(digits) <= 15:
+            extracted = matched_str
+
+    # 2. Fallback: extract all digits if there is exactly one block of 10-15 digits
+    if not extracted:
+        raw_digits = "".join(c for c in raw if c.isdigit())
+        if 10 <= len(raw_digits) <= 15:
+            groups = re.findall(r"\d+", raw)
+            if len(groups) == 1 or (len(groups) == 2 and groups[0] == "91" and len(groups[0]+groups[1]) <= 15):
+                first_match = re.search(r"\+?\d", raw)
+                if first_match:
+                    start_idx = first_match.start()
+                    last_digit_match = list(re.finditer(r"\d", raw))[-1]
+                    end_idx = last_digit_match.end()
+                    substring = raw[start_idx:end_idx].strip()
+                    if not re.search(r"[a-zA-Z]", substring):
+                        extracted = substring
+
+    if not extracted:
         # Check if the user is asking a question or trying to chat instead of providing a phone number
         prompt = (
             f"The user was asked for their mobile number for further collaboration, but instead they said: '{raw}'.\n"
@@ -307,14 +333,14 @@ async def collect_phone_node(state: ChatState) -> dict:
             "If they are asking a question (e.g. 'what is my name', 'who are you', 'what is varsapradaya') or trying to chat, "
             "directly answer their question warmly using the context. Then, politely explain that they still need to "
             "provide their mobile number for further collaboration and start chatting.\n"
-            "If they are just typing a bad phone number, typing nonsense, or mashing the keyboard, "
-            "politely point out it doesn't look like a valid mobile number and ask them to try again (e.g., +91 9876543210 format)."
+            "If they are just typing a bad phone number, typing nonsense, or mashing the keyboard (including entering a number with fewer than 10 digits), "
+            "politely point out it doesn't look like a valid mobile number (must have at least 10 digits) and ask them to try again (e.g., +91 9876543210 format)."
         )
         reply = await _generate_dynamic_reply(prompt, user_input=raw, category=category)
         return {"reply": reply, "step": "await_phone", "phone_attempts": attempts}
 
     # ── VALID PHONE NUMBER ──
-    normalized_phone = normalize_phone_number(raw)
+    normalized_phone = normalize_phone_number(extracted)
     
     # Check if this phone number already exists in the database
     async with AsyncSessionLocal() as db:
