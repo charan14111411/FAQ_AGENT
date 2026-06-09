@@ -252,8 +252,9 @@ async def collect_name_node(state: ChatState) -> dict:
 
     prompt = (
         f"The user just shared their name: {name}. "
-        "Greet them warmly by name, then ask for their mobile number for further collaboration. "
-        "Keep the entire response extremely short and concise (under 20 words)."
+        "Greet them warmly by name, and ask for their mobile number. "
+        "Reassure them briefly that their contact details are completely secure and needed only for privacy, security, and future offline collaboration. "
+        "Keep the entire response extremely short, comforting, and concise (under 30 words)."
     )
     reply = await _generate_dynamic_reply(prompt, category=category)
 
@@ -336,7 +337,7 @@ async def collect_phone_node(state: ChatState) -> dict:
             "directly answer their question warmly using the context. Then, politely explain that they still need to "
             "provide their mobile number for further collaboration and start chatting.\n"
             "If they are just typing a bad phone number, typing nonsense, or mashing the keyboard (including entering a number with fewer than 10 digits), "
-            "politely point out it doesn't look like a valid mobile number (must have at least 10 digits) and ask them to try again (e.g., +91 9876543210 format)."
+            "reassure them that we keep their mobile number private and secure, explain that it is strictly needed for secure authentication and offline updates, and politely ask them to try again (e.g., +91 9876543210 format)."
         )
         reply = await _generate_dynamic_reply(prompt, user_input=raw, category=category)
         return {"reply": reply, "step": "await_phone", "phone_attempts": attempts}
@@ -431,7 +432,8 @@ async def collect_phone_node(state: ChatState) -> dict:
     prompt = (
         "The user just provided their phone number successfully. "
         "Warmly acknowledge it, then ask for their email address. "
-        "Keep the response extremely brief and concise (under 15 words)."
+        "Reassure them briefly that their email is kept secure and will only be used to send them their chat transcript and updates. "
+        "Keep the response extremely brief, reassuring, and concise (under 25 words)."
     )
     reply = await _generate_dynamic_reply(prompt, category=category)
 
@@ -466,7 +468,7 @@ async def collect_email_node(state: ChatState) -> dict:
             "directly answer their question warmly using the context. Then, politely explain that they still need to "
             "provide their email address for further collaboration.\n"
             "If they are just typing an invalid email format or typing nonsense, "
-            "politely point out it doesn't look like a valid email and ask them to try again (e.g., yourname@example.com)."
+            "reassure them that we keep their email address private and secure, explain that it is strictly needed to send them their chat transcript and updates, and politely ask them to try again (e.g., yourname@example.com)."
         )
         reply = await _generate_dynamic_reply(prompt, user_input=raw, category=category)
         return {"reply": reply, "step": "await_email", "email_attempts": attempts}
