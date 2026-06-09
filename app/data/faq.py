@@ -258,11 +258,6 @@ FAQ = [
     },
     {
         "category": "exploring",
-        "question": "here from ur side what can i get",
-        "answer": "We offer IoT sensor networks, AI farm analytics, and the FarmFuture platform from our side."
-    },
-    {
-        "category": "exploring",
         "question": "How can I get help from your side?",
         "answer": "We are here to help! At Varsapradaya we offer IoT sensor networks, AI-driven farm analytics, the FarmFuture platform, and expert advisors. Reach out to us at info@varsapradaya.com or call +91 70323 25050 and we will connect you with the right person."
     },
@@ -270,21 +265,6 @@ FAQ = [
         "category": "exploring",
         "question": "How could you help me?",
         "answer": "We can help you in several ways — through smart IoT sensors for your plantation, AI-powered crop analytics via our FarmFuture app, supply chain compliance tools for corporates, or investment insights. Just tell us your role and we will tailor our support to you."
-    },
-    {
-        "category": "exploring",
-        "question": "How could u help me?",
-        "answer": "We can help you with smart plantation monitoring, AI crop analytics, early pest alerts, regulatory compliance, and quality verification. Whether you are a grower, corporate, or investor, our FarmFuture platform and expert team are here for you."
-    },
-    {
-        "category": "exploring",
-        "question": "How can u help me?",
-        "answer": "We help growers monitor their plantations with IoT sensors, corporates with compliance and supply chain tools, and investors with agritech market data — all through our FarmFuture platform. Contact us at info@varsapradaya.com to get started."
-    },
-    {
-        "category": "exploring",
-        "question": "What can i get from you?",
-        "answer": "From Varsapradaya, you can get IoT sensor networks for plantation monitoring, AI-driven crop analytics, pest and climate alerts, quality verification for buyers, and direct expert support from our team."
     },
     {
         "category": "exploring",
@@ -375,22 +355,6 @@ FAQ = [
     },
 
 
-    # PROFESSIONALS FROM OTHER FIELDS
-    {
-        "category": "exploring",
-        "question": "I am a doctor. How can I get help from your product?",
-        "answer": "Welcome! While Varsapradaya is built for the agritech sector, many professionals like healthcare workers also own or invest in plantations. If you are a plantation owner, investor, or simply exploring agritech, we would love to help. Reach us at info@varsapradaya.com or call +91 70323 25050."
-    },
-    {
-        "category": "exploring",
-        "question": "I am not a farmer or investor. Can Varsapradaya still help me?",
-        "answer": "Absolutely! Regardless of your profession, if you are curious about agritech, own land, or are considering an investment in sustainable farming, Varsapradaya has something for you. Feel free to reach out to us at info@varsapradaya.com or call +91 70323 25050 and we will guide you."
-    },
-    {
-        "category": "exploring",
-        "question": "I am from a different industry. How is Varsapradaya relevant to me?",
-        "answer": "Varsapradaya's technology has broad relevance — from sustainability and ESG reporting for businesses, to investment opportunities in the growing agritech sector, to supply chain transparency for food companies. Contact us at info@varsapradaya.com to explore how we can be of value to you."
-    },
     {
         "category": "exploring",
         "question": "What is Soil Sync and how does it work?",
@@ -1004,8 +968,18 @@ FAQ = [
     # NEW: About Varsapradaya & FarmFuture Platform (Q191-Q227)
     {
         "category": "exploring",
-        "question": "What is Varsapradaya?",
+        "question": "What is Varsapradaya? What is its main goal, motive, mission, or purpose?",
         "answer": "Varsapradaya (Varsapradaya Private Limited) is an Indian agri-tech company providing end-to-end solutions for coffee estate owners from soil preparation to harvest."
+    },
+    {
+        "category": "exploring",
+        "question": "What is the main goal, motive, mission, or purpose of Varsapradaya?",
+        "answer": "The main goal of Varsapradaya is to provide end-to-end precision agritech solutions for coffee and plantation estate owners, helping them optimize resource use, increase productivity, and adopt sustainable farming practices."
+    },
+    {
+        "category": "exploring",
+        "question": "What other devices do you have along with MicroClime? What are the different devices, sensors, or plans offered by Varsapradaya?",
+        "answer": "Varsapradaya offers four farm monitoring hardware packages: 1) FarmFuture MicroClime (weather monitoring), 2) FarmFuture SoilSync (soil intelligence), 3) FarmFuture RainSense (rainfall tracking), and 4) Yield Whisperer (all-in-one weather and soil monitoring)."
     },
     {
         "category": "exploring",
