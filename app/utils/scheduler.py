@@ -36,17 +36,20 @@ async def monitor_inactive_sessions_loop():
                     # 2. Immediately close the session in the database (acts as a processing lock)
                     await end_session(db, session_id)
                     
-                    # 3. Trigger email transcript & followup asynchronously (non-blocking task)
-                    email_task = asyncio.create_task(
-                        send_transcript_email(
-                            session_id=session_id,
-                            email=email,
-                            name=name,
-                            category=category
+                    # 3. Trigger email transcript & followup asynchronously (non-blocking task) if contact details are present
+                    if email:
+                        email_task = asyncio.create_task(
+                            send_transcript_email(
+                                session_id=session_id,
+                                email=email,
+                                name=name,
+                                category=category
+                            )
                         )
-                    )
-                    _background_tasks.add(email_task)
-                    email_task.add_done_callback(_background_tasks.discard)
+                        _background_tasks.add(email_task)
+                        email_task.add_done_callback(_background_tasks.discard)
+                    else:
+                        logger.info(f"Skipping transcript email for timed-out session {session_id} because email is missing.")
                     
                     if phone:
                         followup_task = asyncio.create_task(
@@ -58,6 +61,8 @@ async def monitor_inactive_sessions_loop():
                         )
                         _background_tasks.add(followup_task)
                         followup_task.add_done_callback(_background_tasks.discard)
+                    else:
+                        logger.info(f"Skipping WhatsApp/SMS followup for timed-out session {session_id} because phone is missing.")
                     
         except asyncio.CancelledError:
             # Handle cancellation gracefully during app shutdown

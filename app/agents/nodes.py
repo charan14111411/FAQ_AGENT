@@ -16,6 +16,8 @@ from app.db import (
     get_prospect_id_for_user,
     find_user_by_phone,
     update_user_name,
+    update_user_contact_info,
+    merge_temp_user_with_existing_phone,
 )
 from app.services.crm import create_crm_prospect
 from app.logger import get_logger
@@ -202,7 +204,7 @@ async def classify_entry_node(state: ChatState) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# NODE: await_name — validate name, ask for phone (in agent persona)
+# NODE: await_name — validate name, register temp user, and start chatting
 # ---------------------------------------------------------------------------
 
 async def collect_name_node(state: ChatState) -> dict:
@@ -250,24 +252,40 @@ async def collect_name_node(state: ChatState) -> dict:
     name = re.sub(r"(?i)^(i('m| am)|my name is|this is|hi[,!]?|hello[,!]?)\s*", "", raw).strip()
     name = name.title() if name else raw.title()
 
+    # Register temporary user immediately in the database and create a session
+    async with AsyncSessionLocal() as db:
+        new_user = await create_user(db, name=name, email=None, phone=None)
+        user_id = str(new_user.id)
+        session = await create_session(db, user_id=user_id, category=category, is_returning=False)
+        session_id = str(session.id)
+
+        await write_log(
+            db, "INFO", "user_created_temp",
+            f"Temporary user created: {name}, category: {category}",
+            user_id=new_user.id,
+            meta={"category": category}
+        )
+
     prompt = (
-        f"The user just shared their name: {name}. "
-        "Greet them warmly by name, then ask for their mobile number for further collaboration. "
-        "Keep the entire response extremely short and concise (under 20 words)."
+        f"The user has just shared their name: {name} and category: {category}. "
+        "Welcome them warmly and ask how you can help them today. "
+        "Keep the welcome warm, professional, and very concise (under 20 words)."
     )
     reply = await _generate_dynamic_reply(prompt, category=category)
 
     return {
         "name": name,
+        "user_id": user_id,
+        "session_id": session_id,
+        "is_returning": False,
         "reply": reply,
-        "step": "await_phone",
+        "step": "chatting",
+        "agent_name": f"{category}_agent",
         "phone_attempts": 0,
+        "email_attempts": 0,
+        "farewell_attempts": 0,
     }
 
-
-# ---------------------------------------------------------------------------
-# NODE: await_phone — validate phone, ask for email (in agent persona)
-# ---------------------------------------------------------------------------
 
 def normalize_phone_number(phone: str) -> str:
     """
@@ -291,20 +309,37 @@ def normalize_phone_number(phone: str) -> str:
     return digits
 
 
-async def collect_phone_node(state: ChatState) -> dict:
+# ---------------------------------------------------------------------------
+# NODE: await_phone_on_exit — validate phone on exit, handle merging/updating
+# ---------------------------------------------------------------------------
+
+async def collect_phone_on_exit_node(state: ChatState) -> dict:
     raw = state["user_input"].strip()
     category = state.get("category", "exploring")
     attempts = state.get("phone_attempts", 0) + 1
+    session_id = state.get("session_id")
+    temp_user_id = state.get("user_id")
 
     if not raw:
-        prompt = "The user submitted an empty message when asked for their phone number. Politely ask them to type their phone number."
+        prompt = "The user submitted an empty message when asked for their phone number at exit. Politely ask them to type their phone number or say they'd prefer to skip. Keep it under 15 words."
         reply = await _generate_dynamic_reply(prompt, category=category)
-        return {"reply": reply, "step": "await_phone", "phone_attempts": attempts}
+        return {"reply": reply, "step": "await_phone_on_exit", "phone_attempts": attempts}
 
-    # Clean and extract valid phone number from input (non-hardcoded regex-based extraction)
+    # Check for skip/decline keywords
+    raw_lower = raw.lower().rstrip(".,!?")
+    declines = {"no", "skip", "decline", "cancel", "exit", "bye", "none", "nope", "nah", "no thanks", "no thank you", "skip this"}
+    if raw_lower in declines or any(dec in raw_lower for dec in ["don't want", "dont want", "no phone", "no mobile", "skip"]):
+        prompt = (
+            "The user declined to provide their phone number at exit. "
+            "Acknowledge this decision professionally, and ask if they would like to share their email address "
+            "for further updates and collaboration. "
+            "Keep the tone highly professional, businesslike, and under 20 words."
+        )
+        reply = await _generate_dynamic_reply(prompt, category=category)
+        return {"reply": reply, "step": "await_email_on_exit", "email_attempts": 0}
+
+    # Attempt to extract a valid phone number
     extracted = None
-
-    # 1. Search for a substring that looks like a phone number (e.g. sequence of digits, spaces, hyphens)
     match = re.search(r"\+?[\d\s\-]{10,20}", raw)
     if match:
         matched_str = match.group(0).strip()
@@ -312,7 +347,6 @@ async def collect_phone_node(state: ChatState) -> dict:
         if 10 <= len(digits) <= 15:
             extracted = matched_str
 
-    # 2. Fallback: extract all digits if there is exactly one block of 10-15 digits
     if not extracted:
         raw_digits = "".join(c for c in raw if c.isdigit())
         if 10 <= len(raw_digits) <= 15:
@@ -327,205 +361,214 @@ async def collect_phone_node(state: ChatState) -> dict:
                     if not re.search(r"[a-zA-Z]", substring):
                         extracted = substring
 
+    # If phone attempts exceeded
     if not extracted:
-        # Check if the user is asking a question or trying to chat instead of providing a phone number
+        if attempts >= 3:
+            prompt = (
+                "The user failed to enter a valid phone number after multiple attempts. "
+                "Acknowledge this decision professionally, and ask if they would like to share their email address "
+                "for further updates and collaboration instead. "
+                "Keep the tone highly professional, businesslike, and under 20 words."
+            )
+            reply = await _generate_dynamic_reply(prompt, category=category)
+            return {"reply": reply, "step": "await_email_on_exit", "email_attempts": 0}
+        
         prompt = (
-            f"The user was asked for their mobile number for further collaboration, but instead they said: '{raw}'.\n"
-            f"Context: We already know their name is '{state.get('name')}' and their selected role is '{category}'.\n"
-            "If they are asking a question (e.g. 'what is my name', 'who are you', 'what is varsapradaya') or trying to chat, "
-            "directly answer their question warmly using the context. Then, politely explain that they still need to "
-            "provide their mobile number for further collaboration and start chatting.\n"
-            "If they are just typing a bad phone number, typing nonsense, or mashing the keyboard (including entering a number with fewer than 10 digits), "
-            "politely point out it doesn't look like a valid mobile number (must have at least 10 digits) and ask them to try again (e.g., +91 9876543210 format)."
+            f"The user typed '{raw}' when asked for their phone number at exit. "
+            "Politely point out it doesn't look like a valid phone number (must have at least 10 digits) and ask them to try again, "
+            "or type 'skip' if they don't wish to share it. Keep it under 20 words."
         )
         reply = await _generate_dynamic_reply(prompt, user_input=raw, category=category)
-        return {"reply": reply, "step": "await_phone", "phone_attempts": attempts}
+        return {"reply": reply, "step": "await_phone_on_exit", "phone_attempts": attempts}
 
-    # ── VALID PHONE NUMBER ──
+    # ── VALID PHONE NUMBER GIVEN ──
     normalized_phone = normalize_phone_number(extracted)
-    
-    # Check if this phone number already exists in the database
+
     async with AsyncSessionLocal() as db:
         existing_user = await find_user_by_phone(db, normalized_phone)
-        
         if existing_user:
-            # --- RETURNING USER (Found by Phone) ---
-            user_id = str(existing_user[0])
-            db_name = existing_user[1]
-            email = existing_user[3]
-            
-            # If the user entered a different name in this session, update it in the database
+            # Returning user merge
+            existing_user_id = str(existing_user[0])
+            existing_name = existing_user[1]
+            existing_email = existing_user[3]
+
+            # Update name if different
             input_name = state.get("name")
-            if input_name and input_name.strip().title() != db_name:
+            if input_name and input_name.strip().title() != existing_name:
                 cleaned_name = input_name.strip().title()
-                await update_user_name(db, user_id, cleaned_name)
-                db_name = cleaned_name
-                logger.info(f"Updated user name from '{existing_user[1]}' to '{cleaned_name}' for user_id={user_id}")
+                await update_user_name(db, existing_user_id, cleaned_name)
+                existing_name = cleaned_name
 
-            # Get last session timestamp before creating new session to show last visit date
-            from sqlalchemy import text
-            query_last_session = "SELECT started_at FROM sessions WHERE user_id = :user_id ORDER BY started_at DESC LIMIT 1"
-            res_last_session = await db.execute(text(query_last_session), {"user_id": user_id})
-            row_last_session = res_last_session.fetchone()
-            
-            last_visit_str = None
-            if row_last_session and row_last_session[0]:
-                last_visit_str = row_last_session[0].strftime("%B %d, %Y")
+            await merge_temp_user_with_existing_phone(db, temp_user_id, existing_user_id, session_id)
 
-            # Create session directly
-            session = await create_session(db, user_id, category, is_returning=True)
-            session_id = str(session.id)
+            if existing_email:
+                # We have email, we can register CRM and end the session
+                prospect_id = await create_crm_prospect(name=existing_name, mobile=normalized_phone)
+                if prospect_id == "DUPLICATE":
+                    prospect_id = await get_prospect_id_for_user(db, existing_user_id)
+                if prospect_id and prospect_id != "DUPLICATE":
+                    try:
+                        await update_session_prospect_id(db, session_id, prospect_id)
+                    except Exception as crm_err:
+                        logger.warning(f"Could not save prospect_id to session: {crm_err}")
 
-            await write_log(
-                db, "INFO", "user_returning",
-                f"Returning user (via phone): {email or 'None'}, today's category: {category}",
-                user_id=existing_user[0],
-                meta={"category": category}
-            )
+                await end_session(db, session_id)
 
-            # CRM integration
-            prospect_id = await create_crm_prospect(name=db_name, mobile=normalized_phone)
-            if prospect_id == "DUPLICATE":
-                prospect_id = await get_prospect_id_for_user(db, user_id)
-            if prospect_id and prospect_id != "DUPLICATE":
-                try:
-                    await update_session_prospect_id(db, session_id, prospect_id)
-                except Exception as crm_err:
-                    logger.warning(f"Could not save prospect_id to session: {crm_err}")
-
-            # Welcome back reply
-            if last_visit_str:
                 prompt = (
-                    f"Welcome back the returning user whose name is {db_name}. "
-                    f"Mention warmly that they last visited us on {last_visit_str} to make it personalized. "
-                    f"They are now engaging as a {category} audience member. "
-                    "Keep the welcome warm but short and natural (under 25 words). "
-                    "Ask what you can help with today."
+                    f"A returning user ({existing_name}) provided their registered phone number. "
+                    "Acknowledge their returning status, tell them they are all set and we will send a copy of the transcript. "
+                    "Give a warm final goodbye under 15 words."
                 )
+                reply = await _generate_dynamic_reply(prompt, category=category)
+                return {
+                    "phone": normalized_phone,
+                    "email": existing_email,
+                    "user_id": existing_user_id,
+                    "name": existing_name,
+                    "reply": reply,
+                    "step": "ended",
+                    "is_returning": True,
+                }
             else:
+                # Returning user, but email is missing
                 prompt = (
-                    f"Welcome back the returning user whose name is {db_name}. "
-                    f"They are now engaging as a {category} audience member. "
-                    "Keep the welcome warm but extremely short (under 15 words). "
-                    "Ask what you can help with today."
+                    f"Welcome back {existing_name}! Acknowledge their returning status and ask for their email address "
+                    "so we can send them a copy of the transcript. Keep it under 15 words."
                 )
-            reply = await _generate_dynamic_reply(prompt, category=category)
+                reply = await _generate_dynamic_reply(prompt, category=category)
+                return {
+                    "phone": normalized_phone,
+                    "user_id": existing_user_id,
+                    "name": existing_name,
+                    "reply": reply,
+                    "step": "await_email_on_exit",
+                    "is_returning": True,
+                    "email_attempts": 0,
+                }
+        else:
+            # New user phone number, update database temp user with this phone
+            await update_user_contact_info(db, temp_user_id, phone=normalized_phone)
 
+            prompt = (
+                "Thank the user professionally for providing their phone number. Politely ask if they would "
+                "also like to share their email address for further updates and collaboration. "
+                "Keep it professional, concise, and under 15 words."
+            )
+            reply = await _generate_dynamic_reply(prompt, category=category)
             return {
                 "phone": normalized_phone,
-                "email": email,
-                "user_id": user_id,
-                "session_id": session_id,
-                "name": db_name,
-                "is_returning": True,
                 "reply": reply,
-                "step": "chatting",
-                "agent_name": f"{category}_agent",
-                "phone_attempts": 0,
+                "step": "await_email_on_exit",
                 "email_attempts": 0,
-                "farewell_attempts": 0,
             }
 
-    # --- NEW USER ---
-    # Ask for email to register
-    prompt = (
-        "The user just provided their phone number successfully. "
-        "Warmly acknowledge it, then ask for their email address. "
-        "Keep the response extremely brief and concise (under 15 words)."
-    )
-    reply = await _generate_dynamic_reply(prompt, category=category)
-
-    return {
-        "phone": normalized_phone,
-        "reply": reply,
-        "step": "await_email",
-        "email_attempts": 0,
-    }
-
 
 # ---------------------------------------------------------------------------
-# NODE: await_email — validate email, DB lookup/create, start chatting
+# NODE: await_email_on_exit — validate email on exit and finalize session
 # ---------------------------------------------------------------------------
 
-async def collect_email_node(state: ChatState) -> dict:
+async def collect_email_on_exit_node(state: ChatState) -> dict:
     raw = state["user_input"].strip().lower()
     category = state.get("category", "exploring")
     attempts = state.get("email_attempts", 0) + 1
+    session_id = state.get("session_id")
+    user_id = state.get("user_id")
+    phone = state.get("phone")
+    name = state.get("name", "Explorer")
 
     if not raw:
-        prompt = "The user submitted an empty message when asked for their email. Politely ask them to type their email address."
+        prompt = "The user submitted an empty message when asked for their email at exit. Ask them to type their email or type 'skip' to finish. Keep it under 15 words."
         reply = await _generate_dynamic_reply(prompt, category=category)
-        return {"reply": reply, "step": "await_email", "email_attempts": attempts}
+        return {"reply": reply, "step": "await_email_on_exit", "email_attempts": attempts}
 
-    if not re.match(EMAIL_REGEX, raw):
-        # Check if the user is asking a question or trying to chat instead of providing an email
+    # Check for skip/decline keywords
+    raw_lower = raw.lower().rstrip(".,!?")
+    declines = {"no", "skip", "decline", "cancel", "exit", "bye", "none", "nope", "nah", "no thanks", "no thank you", "skip this"}
+    if raw_lower in declines or any(dec in raw_lower for dec in ["don't want", "dont want", "no email", "skip"]):
+        # End the session cleanly
+        if session_id:
+            async with AsyncSessionLocal() as db:
+                await end_session(db, session_id)
+                # Register prospect since we have phone
+                if phone:
+                    prospect_id = await create_crm_prospect(name=name, mobile=phone)
+                    if prospect_id == "DUPLICATE":
+                        prospect_id = await get_prospect_id_for_user(db, user_id)
+                    if prospect_id and prospect_id != "DUPLICATE":
+                        try:
+                            await update_session_prospect_id(db, session_id, prospect_id)
+                        except Exception as crm_err:
+                            logger.warning(f"Could not save prospect_id to session: {crm_err}")
+                            
         prompt = (
-            f"The user was asked for their email address for further collaboration, but instead they said: '{raw}'.\n"
-            f"Context: We know their name is '{state.get('name')}', their phone number is '{state.get('phone')}', and their role is '{category}'.\n"
-            "If they are asking a question (e.g. 'what is my name', 'what is my phone number', 'who are you', 'what is varsapradaya') or trying to chat, "
-            "directly answer their question warmly using the context. Then, politely explain that they still need to "
-            "provide their email address for further collaboration.\n"
-            "If they are just typing an invalid email format or typing nonsense, "
-            "politely point out it doesn't look like a valid email and ask them to try again (e.g., yourname@example.com)."
+            "The user declined to provide their email address at exit. "
+            "Politely and professionally thank them for their time and wrap up the conversation. "
+            "Use a highly professional, polished, and warm business tone. Keep it under 15 words."
+        )
+        reply = await _generate_dynamic_reply(prompt, category=category)
+        return {"reply": reply, "step": "ended"}
+
+    # Validate email using regex
+    if not re.match(EMAIL_REGEX, raw):
+        if attempts >= 3:
+            if session_id:
+                async with AsyncSessionLocal() as db:
+                    await end_session(db, session_id)
+                    if phone:
+                        prospect_id = await create_crm_prospect(name=name, mobile=phone)
+                        if prospect_id == "DUPLICATE":
+                            prospect_id = await get_prospect_id_for_user(db, user_id)
+                        if prospect_id and prospect_id != "DUPLICATE":
+                            try:
+                                await update_session_prospect_id(db, session_id, prospect_id)
+                            except Exception as crm_err:
+                                logger.warning(f"Could not save prospect_id to session: {crm_err}")
+            prompt = (
+                "The user failed to enter a valid email after multiple attempts. "
+                "Politely and professionally say goodbye, thank them for their time, and wrap up the conversation. "
+                "Use a highly professional, polished, and warm business tone. Keep it under 15 words."
+            )
+            reply = await _generate_dynamic_reply(prompt, category=category)
+            return {"reply": reply, "step": "ended"}
+        
+        prompt = (
+            f"The user typed '{raw}' when asked for their email address at exit. "
+            "Politely point out it doesn't look like a valid email (e.g., name@example.com) and ask them to try again, "
+            "or type 'skip' to finish. Keep it under 20 words."
         )
         reply = await _generate_dynamic_reply(prompt, user_input=raw, category=category)
-        return {"reply": reply, "step": "await_email", "email_attempts": attempts}
+        return {"reply": reply, "step": "await_email_on_exit", "email_attempts": attempts}
 
-    return await _process_email_and_start_chat(state, raw, category)
-
-
-async def _process_email_and_start_chat(state: ChatState, email: str, category: str) -> dict:
-    """
-    Creates a new user record in the database, establishes a session, and transitions to chatting.
-    (Since returning users are resolved solely via their unique mobile number at the previous step,
-    email is treated as non-unique, allowing multiple users to share an email address).
-    """
+    # ── VALID EMAIL GIVEN ──
     async with AsyncSessionLocal() as db:
-        # Register new user record (Returning users skip this entire email node via the phone check)
-        new_user = await create_user(db, state["name"], email, state.get("phone"))
-        user_id = str(new_user.id)
-        phone = state.get("phone", "")
+        await update_user_contact_info(db, user_id, email=raw)
+        
+        # End session
+        if session_id:
+            await end_session(db, session_id)
+            
+            # Register prospect since we have phone and name
+            if phone:
+                prospect_id = await create_crm_prospect(name=name, mobile=phone)
+                if prospect_id == "DUPLICATE":
+                    prospect_id = await get_prospect_id_for_user(db, user_id)
+                if prospect_id and prospect_id != "DUPLICATE":
+                    try:
+                        await update_session_prospect_id(db, session_id, prospect_id)
+                    except Exception as crm_err:
+                        logger.warning(f"Could not save prospect_id to session: {crm_err}")
 
-        session = await create_session(db, user_id, category, is_returning=False)
-        session_id = str(session.id)
-
-        await write_log(
-            db, "INFO", "user_created",
-            f"New user created: {email}, category: {category}",
-            user_id=new_user.id,
-            meta={"category": category}
-        )
-
-        # --- CRM: register prospect (non-blocking) ---
-        prospect_id = await create_crm_prospect(name=state.get("name", ""), mobile=phone)
-        if prospect_id == "DUPLICATE":
-            # Mobile already in CRM — reuse the prospectID from the user's last session
-            prospect_id = await get_prospect_id_for_user(db, user_id)
-            if prospect_id:
-                logger.info(f"CRM duplicate: reusing existing prospect_id={prospect_id} for user={state.get('name')}")
-        if prospect_id and prospect_id != "DUPLICATE":
-            try:
-                await update_session_prospect_id(db, session_id, prospect_id)
-            except Exception as crm_err:
-                logger.warning(f"Could not save prospect_id to session: {crm_err}")
-
-        prompt = (
-            f"The new user ({state.get('name', 'there')}) has just completed setup. "
-            "Briefly tell them they are all set, then ask what you can help with today. "
-            "Keep the response under 15 words."
-        )
-        reply = await _generate_dynamic_reply(prompt, category=category)
-
-        return {
-            "email": email,
-            "user_id": user_id,
-            "session_id": session_id,
-            "is_returning": False,
-            "reply": reply,
-            "step": "chatting",
-            "agent_name": f"{category}_agent",
-            "farewell_attempts": 0,
-        }
+    prompt = (
+        "The user successfully completed their contact registration at exit. "
+        "Warmly thank them, tell them their details are registered and they will receive the chat transcript by email. "
+        "Say a polite final goodbye. Keep it warm and under 20 words."
+    )
+    reply = await _generate_dynamic_reply(prompt, category=category)
+    return {
+        "email": raw,
+        "reply": reply,
+        "step": "ended",
+    }
 
 
 
@@ -559,32 +602,8 @@ _FAREWELL_CONTAINS = [
 
 def _quick_farewell_check(text: str) -> str | None:
     """
-    Instantly classify obvious farewells/continuations without an LLM call.
-    Returns:
-        'END'      — definitely a farewell
-        'CONTINUE' — definitely NOT a farewell (has a question mark or is long)
-        None       — ambiguous, needs LLM fallback
+    Always return None to ensure farewell checks are fully LLM-driven.
     """
-    cleaned = text.strip().lower().rstrip(".,!?")
-
-    # Definite END: exact match
-    if cleaned in _FAREWELL_EXACT:
-        return "END"
-
-    # Definite END: contains a known farewell phrase
-    for phrase in _FAREWELL_CONTAINS:
-        if phrase in cleaned:
-            return "END"
-
-    # Definite CONTINUE: has a question mark → user is asking something
-    if "?" in text:
-        return "CONTINUE"
-
-    # Definite CONTINUE: long message → almost certainly a question/statement
-    if len(cleaned.split()) >= 5:
-        return "CONTINUE"
-
-    # Ambiguous (short, no question mark, no farewell keyword) → needs LLM
     return None
 
 
@@ -696,40 +715,93 @@ async def chat_node(state: ChatState) -> dict:
                 "farewell_attempts": new_attempts,
             }
         else:
-            # 3rd attempt: end session
-            if session_id:
-                try:
-                    async with AsyncSessionLocal() as db:
-                        await end_session(db, session_id)
-                    logger.info(
-                        f"Session ended via farewell: {session_id}",
-                        extra={"event": "session_ended"}
-                    )
-                except Exception as e:
-                    logger.error(f"Failed to end session on farewell: {e}")
+            # 3rd attempt: initiate exit onboarding!
+            phone = state.get("phone")
+            email = state.get("email")
 
-            # Generate a warm final goodbye/greet message in persona
-            prompt = (
-                f"The user has confirmed they are done. Give a warm, final closing goodbye. "
-                "Keep it extremely brief and concise (under 15 words)."
-            )
-            reply = await _generate_dynamic_reply(prompt, category=category)
+            if phone and email:
+                if session_id:
+                    try:
+                        async with AsyncSessionLocal() as db:
+                            await end_session(db, session_id)
+                        logger.info(
+                            f"Session ended via farewell: {session_id}",
+                            extra={"event": "session_ended"}
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to end session on farewell: {e}")
 
-            # Persist user's message and final reply to DB
-            if session_id:
-                try:
-                    async with AsyncSessionLocal() as db:
-                        await save_message(db, session_id, "user", user_msg)
-                        await save_message(db, session_id, "assistant", reply)
-                except Exception as e:
-                    logger.error(f"Failed to save final goodbye to DB: {e}")
+                # Generate a warm final goodbye/greet message in persona
+                prompt = (
+                    f"The user has confirmed they are done. Give a warm, final closing goodbye. "
+                    "Keep it extremely brief and concise (under 15 words)."
+                )
+                reply = await _generate_dynamic_reply(prompt, category=category)
 
-            return {
-                "reply": reply,
-                "step": "ended",
-                "agent_name": f"{category}_agent",
-                "farewell_attempts": new_attempts,
-            }
+                # Persist user's message and final reply to DB
+                if session_id:
+                    try:
+                        async with AsyncSessionLocal() as db:
+                            await save_message(db, session_id, "user", user_msg)
+                            await save_message(db, session_id, "assistant", reply)
+                    except Exception as e:
+                        logger.error(f"Failed to save final goodbye to DB: {e}")
+
+                return {
+                    "reply": reply,
+                    "step": "ended",
+                    "agent_name": f"{category}_agent",
+                    "farewell_attempts": new_attempts,
+                }
+            elif phone and not email:
+                # Transition to await_email_on_exit
+                prompt = (
+                    "The user wants to end the conversation. We have their phone number but not their email address. "
+                    "Professionally ask for their email address for further updates and collaboration. "
+                    "Keep it professional, warm, and under 20 words."
+                )
+                reply = await _generate_dynamic_reply(prompt, category=category)
+
+                if session_id:
+                    try:
+                        async with AsyncSessionLocal() as db:
+                            await save_message(db, session_id, "user", user_msg)
+                            await save_message(db, session_id, "assistant", reply)
+                    except Exception as e:
+                        logger.error(f"Failed to save exit email prompt to DB: {e}")
+
+                return {
+                    "reply": reply,
+                    "step": "await_email_on_exit",
+                    "agent_name": f"{category}_agent",
+                    "email_attempts": 0,
+                    "farewell_attempts": new_attempts,
+                }
+            else:
+                # Transition to await_phone_on_exit
+                prompt = (
+                    "The user wants to end the conversation, and we do not have their contact details. "
+                    "Thank them professionally for their time, and politely ask if they would be willing to share their mobile number "
+                    "for further collaboration and updates. State that they can type 'skip' to proceed without sharing. "
+                    "Keep the tone highly professional, warm, and under 25 words."
+                )
+                reply = await _generate_dynamic_reply(prompt, category=category)
+
+                if session_id:
+                    try:
+                        async with AsyncSessionLocal() as db:
+                            await save_message(db, session_id, "user", user_msg)
+                            await save_message(db, session_id, "assistant", reply)
+                    except Exception as e:
+                        logger.error(f"Failed to save exit phone prompt to DB: {e}")
+
+                return {
+                    "reply": reply,
+                    "step": "await_phone_on_exit",
+                    "agent_name": f"{category}_agent",
+                    "phone_attempts": 0,
+                    "farewell_attempts": new_attempts,
+                }
 
     # ── Normal FAQ flow ──
     # If the user continues conversation with a non-farewell query, reset the counter to 0
@@ -805,16 +877,16 @@ async def _answer_faq(state: ChatState, user_msg: str) -> dict:
             "but I'm happy to help with anything about Varsapradaya!'\n"
             "5. STAY IN CHARACTER: Never say 'As an AI...', 'I am a language model', "
             "or 'I don't have feelings'. You are always Varsapradaya's advisor.\n"
-            "6. POLITENESS ALWAYS: Every response — even a refusal — must be warm, "
-            "helpful, and end with an invitation to continue the conversation.\n"
+            "6. POLITENESS ALWAYS: Every response — even a refusal — must be warm and helpful.\n"
             # "7. BE CONCISE: Keep your answers extremely short, direct, and concise (maximum 2-3 sentences, under 60 words total). "
-            "7. FORMAT IN BULLET POINTS: You must always present your final answer in clean, short bullet points using standard markdown bullets (each starting with a hyphen and a space: '- '). Keep the response extremely direct, concise, and under 3 bullets total.\n"
+            "7. FORMAT IN BULLET POINTS: You must always present your final answer in clean, short bullet points using standard markdown bullets (each starting with a hyphen and a space: '- '). Keep the response extremely direct, concise, and under 3 bullets total. Do not include introductory text before the bullets or concluding remarks after them.\n"
             f"8. ROLES: The user is an external {category.upper()} (e.g. farmer, investor, or partner). "
             "You are their advisor/guide representing Varsapradaya. "
             "Never tell the user that they are the Advisor or that they represent Varsapradaya. "
             "They are the client, and you are the Advisor.\n"
             "9. USER NAME: You must NEVER use or mention the user's name in your response unless the user's query is explicitly asking for their own name (e.g. 'what is my name'). Omit their name entirely from all other answers.\n"
             "10. PROFESSIONAL TONE: Always use a clean, modern, and professional business tone. Strictly avoid archaic, overly dramatic, or robotic words such as 'esteemed', 'honored', 'noble', or 'dear user'.\n"
+            "11. NO GREETINGS OR CONCLUDING FLUFF: Do NOT include greetings (such as 'Hello', 'Hi', 'Hello there', 'Welcome', 'It's wonderful to hear from you') at the start of your response, and do NOT include concluding questions or prompts (such as 'Is there anything else I can help you with?', 'Let me know if you need anything else') at the end. Omit them entirely since onboarding already welcomed the user. Start directly with the first bullet point and end immediately after the last bullet point.\n"
         )
 
         if context and context.strip():

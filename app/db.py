@@ -40,7 +40,7 @@ async def update_user_name(db: AsyncSession, user_id, new_name: str):
     await db.execute(text(query), {"name": new_name, "user_id": user_id})
     await db.commit()
 
-async def create_user(db: AsyncSession, name: str, email: str, phone: str = None):
+async def create_user(db: AsyncSession, name: str, email: str = None, phone: str = None):
     try:
         query = """
             INSERT INTO users (name, phone, email)
@@ -56,9 +56,49 @@ async def create_user(db: AsyncSession, name: str, email: str, phone: str = None
             f"IntegrityError when creating user (phone={phone}, email={email}): {e}. "
             "Attempting fallback to fetch existing user."
         )
-        query = "SELECT id, name, phone, email, created_at, updated_at FROM users WHERE phone = :phone LIMIT 1"
-        result = await db.execute(text(query), {"phone": phone})
-        return result.fetchone()
+        if phone:
+            query = "SELECT id, name, phone, email, created_at, updated_at FROM users WHERE phone = :phone LIMIT 1"
+            result = await db.execute(text(query), {"phone": phone})
+            return result.fetchone()
+        raise e
+
+async def update_user_contact_info(db: AsyncSession, user_id, phone: str = None, email: str = None):
+    """
+    Updates the contact details (phone and/or email) of an existing user.
+    """
+    updates = []
+    params = {"user_id": user_id}
+    if phone is not None:
+        updates.append("phone = :phone")
+        params["phone"] = phone
+    if email is not None:
+        updates.append("email = :email")
+        params["email"] = email
+
+    if updates:
+        query = f"UPDATE users SET {', '.join(updates)}, updated_at = NOW() WHERE id = :user_id"
+        await db.execute(text(query), params)
+        await db.commit()
+
+async def merge_temp_user_with_existing_phone(db: AsyncSession, temp_user_id, existing_user_id, session_id):
+    """
+    Merges a temporary user record (created at session start) with an existing user record.
+    1. Updates the session's user_id to point to the existing user and sets is_returning = True.
+    2. Updates any logs associated with the temp user.
+    """
+    # 1. Update the session to point to the existing user and set is_returning = True
+    query_session = """
+        UPDATE sessions
+        SET user_id = :existing_user_id, is_returning = TRUE
+        WHERE id = :session_id
+    """
+    await db.execute(text(query_session), {"existing_user_id": existing_user_id, "session_id": session_id})
+
+    # 2. Update logs if any are associated with the temp user
+    query_logs = "UPDATE logs SET user_id = :existing_user_id WHERE user_id = :temp_user_id"
+    await db.execute(text(query_logs), {"existing_user_id": existing_user_id, "temp_user_id": temp_user_id})
+
+    await db.commit()
 
 async def get_last_session_category(db: AsyncSession, user_id):
     query = "SELECT category FROM sessions WHERE user_id = :user_id ORDER BY started_at DESC LIMIT 1"
