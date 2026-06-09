@@ -79,7 +79,13 @@ def _get_language_instruction(language: str | None, native_name: str | None = No
     lang = (language or "english").strip().lower()
     if lang == "english":
         return ""  # No extra instruction — English is the default
-
+        #  return (
+        #     "CRITICAL LANGUAGE RULE: The user has selected English as their preferred language. "
+        #     "You MUST write your ENTIRE response in English (plain English text), INCLUDING greetings and introductory sentences. "
+        #     "Even if previous messages in this conversation history are in a different language, you MUST switch to English immediately. "
+        #     "The VERY FIRST word of your response MUST be in English. "
+        #     "Keep the same warm, professional tone."
+        # )
     # Use the native_name sent by the production frontend if available;
     # otherwise fall back to the built-in label from _SUPPORTED_LANGUAGES.
     label = _SUPPORTED_LANGUAGES.get(lang)
