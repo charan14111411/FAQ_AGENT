@@ -12,6 +12,13 @@ def get_model():
     global _model
     if _model is None:
         from sentence_transformers import SentenceTransformer
+        try:
+            import torch
+            torch.set_num_threads(1)
+            torch.set_num_interop_threads(1)
+            logger.info("Configured PyTorch CPU thread limits (set to 1 thread) to optimize SentenceTransformer execution.")
+        except ImportError:
+            pass
         logger.info("Loading local SentenceTransformer model 'all-MiniLM-L6-v2' (384 dimensions)...")
         try:
             # 1. Try loading from local cache (fast, offline)

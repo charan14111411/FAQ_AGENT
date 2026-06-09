@@ -34,6 +34,15 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to seed FAQ embeddings: {e}")
 
+    # Warm up local SentenceTransformer model so first query is instant
+    try:
+        from app.rag.embedder import get_model
+        logger.info("Pre-warming local SentenceTransformer model...")
+        await asyncio.to_thread(get_model)
+        logger.info("Model pre-warmed and loaded in RAM.")
+    except Exception as e:
+        logger.error(f"Failed to pre-warm embedding model: {e}")
+
     # 3. Compile LangGraph with PostgreSQL checkpointer
     # AsyncPostgresSaver persists full conversation state across server restarts.
     # It auto-creates the 'checkpoints' and 'checkpoint_blobs' tables in PostgreSQL.

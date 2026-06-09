@@ -13,8 +13,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Copy requirements and install
 COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --root-user-action=ignore --upgrade pip && \
+    pip install --no-cache-dir --root-user-action=ignore -r requirements.txt
 
 # Pre-download and cache the sentence-transformers model (all-MiniLM-L6-v2) during the build phase.
 # This ensures fast container boot times and allows the container to start offline.
@@ -30,4 +30,4 @@ COPY run_migrations.py .
 EXPOSE 8000
 
 # Run migrations first, then start FastAPI with Uvicorn
-CMD python run_migrations.py && uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+CMD python run_migrations.py && uvicorn main:app --host 0.0.0.0 --port 8000 --workers 1

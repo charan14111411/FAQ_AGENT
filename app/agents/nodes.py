@@ -69,7 +69,8 @@ async def _generate_dynamic_reply(system_prompt: str, user_input: str = "", cate
         "RULE 3: If the user's input contains profanity or offensive language, "
         "acknowledge it gently, request professional language, and ask them to retry the current step. "
         "Never be cold or dismissive.\n"
-        "RULE 4: Keep your responses extremely short, concise, and direct (maximum 1-2 sentences). Avoid fluff.\n\n"
+        "RULE 4: Keep your responses extremely short, concise, and direct (maximum 1-2 sentences). Avoid fluff.\n"
+        "RULE 5: Maintain a clean, modern, and professional business tone. Strictly avoid archaic, overly dramatic, or robotic terms such as 'esteemed', 'honored', 'noble', 'dear user', or 'valued client'.\n\n"
     )
 
     if category:
@@ -179,8 +180,9 @@ async def classify_entry_node(state: ChatState) -> dict:
     # Ask for name in the agent's tone (fully LLM-generated), mentioning their category in a professional tone
     prompt = (
         f"The user belongs to the '{category}' category. "
-        f"Warmly welcome them to Varsapradaya. Ask for their full name to get started, making sure to explicitly "
-        f"mention their category in a professional, welcoming tone (e.g., 'Since you are a grower...', 'As an investor...'). "
+        f"Warmly welcome them to Varsapradaya. Ask for their full name to get started. "
+        f"Acknowledge their category in a simple, natural, and professional tone (e.g., 'Since you are a grower...', 'As an investor...'). "
+        "STRICTLY avoid archaic, overly dramatic, or artificial terms like 'esteemed grower', 'honored partner', or similar fluff. Keep it modern and professional. "
         "Keep the welcome and question concise and under 25 words."
     )
     reply = await _generate_dynamic_reply(prompt, category=category)
@@ -767,6 +769,7 @@ async def _answer_faq(state: ChatState, user_msg: str) -> dict:
             "Never tell the user that they are the Advisor or that they represent Varsapradaya. "
             "They are the client, and you are the Advisor.\n"
             "9. USER NAME: You must NEVER use or mention the user's name in your response unless the user's query is explicitly asking for their own name (e.g. 'what is my name'). Omit their name entirely from all other answers.\n"
+            "10. PROFESSIONAL TONE: Always use a clean, modern, and professional business tone. Strictly avoid archaic, overly dramatic, or robotic words such as 'esteemed', 'honored', 'noble', or 'dear user'.\n"
         )
 
         if context and context.strip():
