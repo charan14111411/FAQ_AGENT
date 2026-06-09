@@ -63,6 +63,7 @@ async def lifespan(app: FastAPI):
             min_size=1,
             max_size=10,
             check=check_conn,
+            open=False,
             kwargs={"autocommit": True, "row_factory": dict_row}
         )
         await pool.open()

@@ -905,14 +905,14 @@ async def _answer_faq(state: ChatState, user_msg: str) -> dict:
 
         system_prompt += (
             "\n\nGUARDRAILS — FOLLOW THESE STRICTLY:\n"
-            "1. DOMAIN ONLY: You only answer questions about Varsapradaya. "
+            "1. DOMAIN ONLY: You only answer questions about Varsapradaya (except for questions about the user's own profile/details like their name, email, phone, or role, which you must answer using the 'ACTIVE USER PROFILE' provided above). "
             "If the user asks something entirely unrelated (math, cooking, politics, general knowledge), "
             "acknowledge their question warmly, explain that you specialise in Varsapradaya topics, "
             "and invite them to ask about Varsapradaya instead. Never be dismissive.\n"
             "2. NO SYSTEM ACTIONS: You are a read-only informational assistant. "
             "You cannot delete accounts, reset passwords, clear conversations, or book meetings. "
             "If asked, politely explain this and suggest they contact the support team.\n"
-            "3. NO HALLUCINATION: You must ONLY answer using information from the 'MOST RELEVANT FAQ CONTEXT' provided below. "
+            "3. NO HALLUCINATION: You must ONLY answer using information from the 'MOST RELEVANT FAQ CONTEXT' provided below (except for questions about the user's own profile/details, which you must answer using the 'ACTIVE USER PROFILE'). "
             "If the context is empty, or if the user asks a question about Varsapradaya that is not explicitly answered in the context, "
             "you MUST refuse to answer and say exactly: 'That's a great question! I don't have the exact details on that right now — "
             "I'd encourage you to reach out to our team directly for the most accurate answer.' "
