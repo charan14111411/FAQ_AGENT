@@ -1,3 +1,4 @@
+
 FAQ = [
     # GROWER CATEGORY
     {

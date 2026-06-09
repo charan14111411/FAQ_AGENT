@@ -66,19 +66,30 @@ async def get_last_session_category(db: AsyncSession, user_id):
     row = result.fetchone()
     return row[0] if row else None
 
-async def create_session(db: AsyncSession, user_id, category: str, is_returning: bool):
+async def create_session(db: AsyncSession, user_id, category: str, is_returning: bool, language: str = None):
+    # Store NULL for English (default) to keep the column sparse and backward-compatible
+    lang_value = None if (not language or language.strip().lower() == "english") else language.strip().lower()
     query = """
-        INSERT INTO sessions (user_id, category, is_returning)
-        VALUES (:user_id, :category, :is_returning)
-        RETURNING id, user_id, category, is_returning, started_at, ended_at
+        INSERT INTO sessions (user_id, category, is_returning, language)
+        VALUES (:user_id, :category, :is_returning, :language)
+        RETURNING id, user_id, category, is_returning, started_at, ended_at, language
     """
     result = await db.execute(text(query), {
         "user_id": user_id,
         "category": category,
-        "is_returning": is_returning
+        "is_returning": is_returning,
+        "language": lang_value,
     })
     await db.commit()
     return result.fetchone()
+
+
+async def update_session_language(db: AsyncSession, session_id, language: str):
+    """Updates the language preference stored on an active session."""
+    lang_value = None if (not language or language.strip().lower() == "english") else language.strip().lower()
+    query = "UPDATE sessions SET language = :language WHERE id = :session_id"
+    await db.execute(text(query), {"session_id": session_id, "language": lang_value})
+    await db.commit()
 
 
 async def end_session(db: AsyncSession, session_id):
