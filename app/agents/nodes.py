@@ -175,9 +175,9 @@ async def _classify_with_llm(user_message: str) -> str:
                 "- investor (VCs, venture capitalists, analysts, financial professionals, fund managers)\n"
                 "- corporate (executives, compliance officers, supply-chain managers, resellers, "
                 "  distributors, agritech partners, anyone in a business/commercial/partnership role)\n"
-                "- exploring (curious individuals, students, general public, anyone just learning)\n"
-                "If the message is a generic greeting (like 'hi', 'hello', 'hii'), or does not contain "
-                "enough context/information to identify a role, reply with the word 'unclear'. Do NOT guess.\n\n"
+                "- exploring (curious individuals, students, general public, anyone just learning, or ANY profession/role that does not fit the other three categories e.g. doctor, teacher, software engineer)\n"
+                "If the message is a generic greeting (like 'hi', 'hello', 'hii'), or gibberish, reply with the word 'unclear'.\n"
+                "If the user states ANY clear profession or role that is not a grower, investor, or corporate partner, classify them as 'exploring'. Do NOT use 'unclear' if they state a profession.\n\n"
                 "Reply with ONLY the single category word. Nothing else."
             ),
         },
@@ -211,9 +211,11 @@ async def classify_entry_node(state: ChatState) -> dict:
 
     # Check button click map first (O(1), no LLM)
     category = None
+    is_button_click = False
     for phrase, cat in BUTTON_MAP.items():
         if phrase in raw:
             category = cat
+            is_button_click = True
             break
 
     # Fall back to LLM classifier for free text
@@ -248,14 +250,21 @@ async def classify_entry_node(state: ChatState) -> dict:
 
     logger.info(f"Category classified: {category}", extra={"event": "category_classified"})
 
-    # Ask for name in the agent's tone (fully LLM-generated), mentioning their category in a professional tone
-    prompt = (
-        f"The user belongs to the '{category}' category. "
-        f"Warmly welcome them to Varsapradaya. Ask for their full name to get started. "
-        f"Acknowledge their category in a simple, natural, and professional tone (e.g., 'Since you are a grower...', 'As an investor...'). "
-        "STRICTLY avoid archaic, overly dramatic, or artificial terms like 'esteemed grower', 'honored partner', or similar fluff. Keep it modern and professional. "
-        "Keep the welcome and question concise and under 25 words."
-    )
+    # Ask for name in the agent's tone (fully LLM-generated)
+    if is_button_click:
+        prompt = (
+            f"Warmly welcome the user to Varsapradaya. Ask for their full name to get started. "
+            f"Do NOT mention their role or category (e.g., do not say 'As an investor'), because they just manually selected it from a menu. "
+            "Keep the welcome and question concise, professional, and under 25 words."
+        )
+    else:
+        prompt = (
+            f"The user belongs to the '{category}' category based on what they typed. "
+            f"Warmly welcome them to Varsapradaya. Ask for their full name to get started. "
+            f"Acknowledge their category in a simple, natural, and professional tone to show you understood them (e.g., 'Since you are a grower...', 'As an investor...'). "
+            "STRICTLY avoid archaic, overly dramatic, or artificial terms. Keep it modern and professional. "
+            "Keep the welcome and question concise and under 25 words."
+        )
     reply = await _generate_dynamic_reply(prompt, category=category, language=language, language_native_name=language_native_name)
 
     return {
@@ -340,9 +349,9 @@ async def collect_name_node(state: ChatState) -> dict:
 
     prompt = (
         f"The user just shared their name: {name}. "
-        "Greet them warmly by name, and ask for their mobile number. "
-        "Reassure them briefly that their contact details are completely secure and needed only for privacy, security, and future offline collaboration. "
-        "Keep the entire response extremely short, comforting, and concise (under 30 words)."
+        "Warmly say hello to them by name, and simply ask for their mobile number. "
+        "Do NOT give long explanations about privacy or offline updates. "
+        "Keep it extremely short, natural, and under 15 words."
     )
     reply = await _generate_dynamic_reply(prompt, category=category, language=language, language_native_name=language_native_name)
 
@@ -426,8 +435,9 @@ async def collect_phone_node(state: ChatState) -> dict:
             "If they are asking a question (e.g. 'what is my name', 'who are you', 'what is varsapradaya') or trying to chat, "
             "directly answer their question warmly using the context. Then, politely explain that they still need to "
             "provide their mobile number for further collaboration and start chatting.\n"
-            "If they are just typing a bad phone number, typing nonsense, or mashing the keyboard (including entering a number with fewer than 10 digits), "
-            "reassure them that we keep their mobile number private and secure, explain that it is strictly needed for secure authentication and offline updates, and politely ask them to try again (e.g., +91 9876543210 format)."
+            "If they are just typing a bad phone number, typing nonsense, or questioning why we need it, "
+            "acknowledge their hesitation with empathy and professionalism. Reassure them that we ask for their number simply to ensure we can reach them with important offline updates and dedicated support, and that their privacy is highly respected. "
+            "Gently ask them to share their mobile number (e.g., +91 XXXXX XXXXX format) to continue. Keep the tone warm, premium, and human-like."
         )
         reply = await _generate_dynamic_reply(prompt, user_input=raw, category=category, language=language, language_native_name=language_native_name)
         return {"reply": reply, "step": "await_phone", "phone_attempts": attempts}
@@ -521,9 +531,9 @@ async def collect_phone_node(state: ChatState) -> dict:
     # Ask for email to register
     prompt = (
         "The user just provided their phone number successfully. "
-        "Warmly acknowledge it, then ask for their email address. "
-        "Reassure them briefly that their email is kept secure and will only be used to send them their chat transcript and updates. "
-        "Keep the response extremely brief, reassuring, and concise (under 25 words)."
+        "Say a quick thank you, and ask for their email address. "
+        "Do NOT give long explanations about transcripts or confidentiality. "
+        "Keep it extremely short, natural, and under 15 words."
     )
     reply = await _generate_dynamic_reply(prompt, category=category, language=language, language_native_name=language_native_name)
 
@@ -596,9 +606,10 @@ async def collect_email_node(state: ChatState) -> dict:
             "If they are asking a question (e.g. 'what is my name', 'what is my phone number', 'who are you', 'what is varsapradaya') or trying to chat, "
             "directly answer their question warmly using the context. Then, politely remind them that "
             "email is optional — they can share their email or type 'skip' to continue without it.\n"
-            "If they are just typing an invalid email format or typing nonsense, "
-            "politely point out it doesn't look like a valid email and ask them to try again (e.g., yourname@example.com), "
-            "or they can type 'skip' to continue without providing one."
+            "If they are typing an invalid email format, typing nonsense, or questioning why we need it, "
+            "empathize with their concern professionally. Reassure them that we only ask for their email to send them a transcript of this conversation and any relevant updates, and that their privacy is strictly protected. "
+            "Remind them gently that they can either share their email (e.g., yourname@example.com), or simply type 'skip' if they prefer to continue without it. "
+            "Tone should be warm, accommodating, and premium."
         )
         reply = await _generate_dynamic_reply(prompt, user_input=raw, category=category, language=language, language_native_name=language_native_name)
         return {"reply": reply, "step": "await_email", "email_attempts": attempts}
@@ -645,14 +656,14 @@ async def _process_email_and_start_chat(state: ChatState, email: str, category: 
         if email:
             prompt = (
                 f"The new user ({state.get('name', 'there')}) has just provided their email and completed setup. "
-                "Warmly thank them, tell them they are all set, and ask what you can help with today. "
-                "Keep the response under 15 words."
+                "Warmly thank them, and directly ask how you can assist them today. "
+                "Do NOT use phrases like 'you are all set' or 'you're all set'. Keep the response highly professional and under 15 words."
             )
         else:
             prompt = (
                 f"The new user ({state.get('name', 'there')}) opted to skip providing their email and completed setup. "
-                "Professionally acknowledge it (e.g. 'No problem!'), tell them they are all set, and ask what you can help with today. "
-                "Keep the response under 15 words."
+                "Professionally acknowledge it (e.g. 'No problem!'), and directly ask how you can assist them today. "
+                "Do NOT use phrases like 'you are all set' or 'you're all set'. Keep the response highly professional and under 15 words."
             )
         reply = await _generate_dynamic_reply(prompt, category=category, language=state.get("language"), language_native_name=state.get("language_native_name"))
 
@@ -977,8 +988,7 @@ async def _answer_faq(state: ChatState, user_msg: str) -> dict:
             "or 'I don't have feelings'. You are always Varsapradaya's advisor.\n"
             "6. POLITENESS ALWAYS: Every response — even a refusal — must be warm, "
             "helpful, and end with an invitation to continue the conversation.\n"
-            # "7. BE CONCISE: Keep your answers extremely short, direct, and concise (maximum 2-3 sentences, under 60 words total). "
-            "7. FORMAT IN BULLET POINTS: You must always present your final answer in clean, short bullet points using standard markdown bullets (each starting with a hyphen and a space: '- '). Keep the response extremely direct, concise, and under 3 bullets total.\n"
+            "7. BE EXTREMELY CONCISE: You must give very short, direct answers. Do not use filler words. Present your final answer in 1 to 2 short bullet points using standard markdown bullets ('- '). The entire response must be under 30 words total.\n"
             f"8. ROLES: The user is an external {category.upper()} (e.g. farmer, investor, or partner). "
             "You are their advisor/guide representing Varsapradaya. "
             "Never tell the user that they are the Advisor or that they represent Varsapradaya. "
