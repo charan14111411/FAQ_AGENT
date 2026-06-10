@@ -536,36 +536,75 @@ async def collect_phone_node(state: ChatState) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# NODE: await_email — validate email, DB lookup/create, start chatting
+# HELPER: LLM-based email skip detector (no hardcoded skip words)
+# ---------------------------------------------------------------------------
+
+async def _check_if_email_skipped_with_llm(user_input: str) -> bool:
+    """
+    Fast LLM call to detect if the user wants to skip providing their email.
+    Returns True if they want to skip, False if they are trying to provide an email.
+    """
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are an intent classification assistant.\n"
+                "Determine if the user's message indicates they want to skip, bypass, decline, "
+                "or not provide their email address right now "
+                "(e.g., 'skip', 'no', 'none', 'no thank you', 'dont have one', 'later', 'skip it', 'n/a', 'not now').\n\n"
+                "Reply with EXACTLY 'SKIP' or 'PROVIDE'. Do not include any other words."
+            ),
+        },
+        {"role": "user", "content": user_input},
+    ]
+    result = await _call_llm(messages, max_tokens=10, temperature=0.0)
+    return "SKIP" in result["reply"].upper()
+
+
+# ---------------------------------------------------------------------------
+# NODE: await_email — validate email (optional), DB lookup/create, start chatting
 # ---------------------------------------------------------------------------
 
 async def collect_email_node(state: ChatState) -> dict:
-    raw = state["user_input"].strip().lower()
+    raw = state["user_input"].strip()
     category = state.get("category", "exploring")
     attempts = state.get("email_attempts", 0) + 1
     language = state.get("language")
     language_native_name = state.get("language_native_name")
 
     if not raw:
-        prompt = "The user submitted an empty message when asked for their email. Politely ask them to type their email address."
+        prompt = (
+            "The user submitted an empty message when asked for their email. "
+            "Politely remind them that email is optional — they can type their email "
+            "or simply say 'skip' to continue without it."
+        )
         reply = await _generate_dynamic_reply(prompt, category=category, language=language, language_native_name=language_native_name)
         return {"reply": reply, "step": "await_email", "email_attempts": attempts}
 
-    if not re.match(EMAIL_REGEX, raw):
+    # ── Check if user wants to skip email ─────────────────────────────────
+    is_skipped = await _check_if_email_skipped_with_llm(raw)
+    if is_skipped:
+        # Proceed to chatting with email=None (email is optional)
+        return await _process_email_and_start_chat(state, None, category)
+
+    # ── Validate email format ─────────────────────────────────────────────
+    if not re.match(EMAIL_REGEX, raw.lower()):
         # Check if the user is asking a question or trying to chat instead of providing an email
         prompt = (
             f"The user was asked for their email address for further collaboration, but instead they said: '{raw}'.\n"
             f"Context: We know their name is '{state.get('name')}', their phone number is '{state.get('phone')}', and their role is '{category}'.\n"
             "If they are asking a question (e.g. 'what is my name', 'what is my phone number', 'who are you', 'what is varsapradaya') or trying to chat, "
-            "directly answer their question warmly using the context. Then, politely explain that they still need to "
-            "provide their email address for further collaboration.\n"
+            "directly answer their question warmly using the context. Then, politely remind them that "
+            "email is optional — they can share their email or type 'skip' to continue without it.\n"
             "If they are just typing an invalid email format or typing nonsense, "
-            "reassure them that we keep their email address private and secure, explain that it is strictly needed to send them their chat transcript and updates, and politely ask them to try again (e.g., yourname@example.com)."
+            "politely point out it doesn't look like a valid email and ask them to try again (e.g., yourname@example.com), "
+            "or they can type 'skip' to continue without providing one."
         )
         reply = await _generate_dynamic_reply(prompt, user_input=raw, category=category, language=language, language_native_name=language_native_name)
         return {"reply": reply, "step": "await_email", "email_attempts": attempts}
 
-    return await _process_email_and_start_chat(state, raw, category)
+    # ── Valid email — proceed ─────────────────────────────────────────────
+    return await _process_email_and_start_chat(state, raw.lower(), category)
 
 
 async def _process_email_and_start_chat(state: ChatState, email: str, category: str) -> dict:
@@ -603,11 +642,18 @@ async def _process_email_and_start_chat(state: ChatState, email: str, category: 
             except Exception as crm_err:
                 logger.warning(f"Could not save prospect_id to session: {crm_err}")
 
-        prompt = (
-            f"The new user ({state.get('name', 'there')}) has just completed setup. "
-            "Briefly tell them they are all set, then ask what you can help with today. "
-            "Keep the response under 15 words."
-        )
+        if email:
+            prompt = (
+                f"The new user ({state.get('name', 'there')}) has just provided their email and completed setup. "
+                "Warmly thank them, tell them they are all set, and ask what you can help with today. "
+                "Keep the response under 15 words."
+            )
+        else:
+            prompt = (
+                f"The new user ({state.get('name', 'there')}) opted to skip providing their email and completed setup. "
+                "Professionally acknowledge it (e.g. 'No problem!'), tell them they are all set, and ask what you can help with today. "
+                "Keep the response under 15 words."
+            )
         reply = await _generate_dynamic_reply(prompt, category=category, language=state.get("language"), language_native_name=state.get("language_native_name"))
 
         return {
