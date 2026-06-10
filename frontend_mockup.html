@@ -75,7 +75,8 @@
       font-family: 'Playfair Display', serif;
       font-style: italic;
       font-size: clamp(16px, 2.5vw, 22px);
-      color: #570000; /* Red brand accent color */
+      color: #570000;
+      /* Red brand accent color */
       margin: 0;
     }
 
@@ -139,6 +140,7 @@
         opacity: 0;
         transform: translateY(8px);
       }
+
       to {
         opacity: 1;
         transform: translateY(0);
@@ -262,7 +264,8 @@
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
-      margin-left: 48px; /* aligns to match text offset under bot avatar */
+      margin-left: 48px;
+      /* aligns to match text offset under bot avatar */
       animation: bubbleAppear 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
@@ -331,10 +334,14 @@
     }
 
     @keyframes bounce {
-      0%, 80%, 100% {
+
+      0%,
+      80%,
+      100% {
         transform: translateY(0);
         opacity: 0.4;
       }
+
       40% {
         transform: translateY(-4px);
         opacity: 1;
@@ -450,8 +457,15 @@
     }
 
     @keyframes mic-pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.35); }
-      50%       { box-shadow: 0 0 0 7px rgba(229, 57, 53, 0); }
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.35);
+      }
+
+      50% {
+        box-shadow: 0 0 0 7px rgba(229, 57, 53, 0);
+      }
     }
 
     /* ─── Voice Status Toast ─── */
@@ -497,32 +511,63 @@
       display: inline-block;
       width: 3px;
       border-radius: 3px;
-      background: rgba(255,255,255,0.85);
+      background: rgba(255, 255, 255, 0.85);
       animation: wave-bar 0.8s ease-in-out infinite;
     }
 
-    .voice-wave span:nth-child(1) { height: 6px;  animation-delay: 0s; }
-    .voice-wave span:nth-child(2) { height: 12px; animation-delay: 0.15s; }
-    .voice-wave span:nth-child(3) { height: 16px; animation-delay: 0.3s; }
-    .voice-wave span:nth-child(4) { height: 12px; animation-delay: 0.45s; }
-    .voice-wave span:nth-child(5) { height: 6px;  animation-delay: 0.6s; }
+    .voice-wave span:nth-child(1) {
+      height: 6px;
+      animation-delay: 0s;
+    }
+
+    .voice-wave span:nth-child(2) {
+      height: 12px;
+      animation-delay: 0.15s;
+    }
+
+    .voice-wave span:nth-child(3) {
+      height: 16px;
+      animation-delay: 0.3s;
+    }
+
+    .voice-wave span:nth-child(4) {
+      height: 12px;
+      animation-delay: 0.45s;
+    }
+
+    .voice-wave span:nth-child(5) {
+      height: 6px;
+      animation-delay: 0.6s;
+    }
 
     @keyframes wave-bar {
-      0%, 100% { transform: scaleY(0.4); opacity: 0.5; }
-      50%       { transform: scaleY(1);   opacity: 1; }
+
+      0%,
+      100% {
+        transform: scaleY(0.4);
+        opacity: 0.5;
+      }
+
+      50% {
+        transform: scaleY(1);
+        opacity: 1;
+      }
     }
 
     @media (max-width: 768px) {
       body {
         padding: 20px 10px;
       }
+
       .chat-card {
         padding: 16px;
         gap: 16px;
       }
+
       .onboarding-pills {
         margin-left: 0;
       }
+
       .bubble {
         max-width: 85%;
       }
@@ -548,7 +593,7 @@
       font-weight: 500;
       color: var(--primary-green);
       transition: all 0.2s ease;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
       white-space: nowrap;
     }
 
@@ -579,8 +624,15 @@
     }
 
     @keyframes dropdownAppear {
-      from { opacity: 0; transform: translateY(-6px); }
-      to   { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(-6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     #lang-dropdown.open {
@@ -639,15 +691,17 @@
         <!-- Language selector -->
         <div class="lang-selector-wrap" id="lang-selector-wrap">
           <button id="lang-btn" aria-label="Select language" onclick="toggleLangDropdown()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="2" y1="12" x2="22" y2="12"/>
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="2" y1="12" x2="22" y2="12" />
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
             </svg>
             <span id="lang-btn-label">EN</span>
           </button>
           <div id="lang-dropdown" role="listbox" aria-label="Language options">
-            <button class="lang-option active" onclick="selectLanguage('english', 'English', 'English', 'en')" data-lang="english">
+            <button class="lang-option active" onclick="selectLanguage('english', 'English', 'English', 'en')"
+              data-lang="english">
               <span class="lang-flag">🇬🇧</span> English
             </button>
             <div class="lang-divider"></div>
@@ -657,13 +711,15 @@
             <button class="lang-option" onclick="selectLanguage('hindi', 'Hindi', 'हिन्दी', 'hi')" data-lang="hindi">
               <span class="lang-flag">🇮🇳</span> हिन्दी (Hindi)
             </button>
-            <button class="lang-option" onclick="selectLanguage('kannada', 'Kannada', 'ಕನ್ನಡ', 'kn')" data-lang="kannada">
+            <button class="lang-option" onclick="selectLanguage('kannada', 'Kannada', 'ಕನ್ನಡ', 'kn')"
+              data-lang="kannada">
               <span class="lang-flag">🇮🇳</span> ಕನ್ನಡ (Kannada)
             </button>
             <button class="lang-option" onclick="selectLanguage('telugu', 'Telugu', 'తెలుగు', 'te')" data-lang="telugu">
               <span class="lang-flag">🇮🇳</span> తెలుగు (Telugu)
             </button>
-            <button class="lang-option" onclick="selectLanguage('malayalam', 'Malayalam', 'മലയാളം', 'ml')" data-lang="malayalam">
+            <button class="lang-option" onclick="selectLanguage('malayalam', 'Malayalam', 'മലയാളം', 'ml')"
+              data-lang="malayalam">
               <span class="lang-flag">🇮🇳</span> മലയാളം (Malayalam)
             </button>
             <button class="lang-option" onclick="selectLanguage('urdu', 'Urdu', 'اردو', 'ur')" data-lang="urdu">
@@ -685,7 +741,8 @@
           <div class="avatar bot-avatar" style="background: var(--primary-green); color: #ffffff;">FF</div>
           <div class="bubble bot">
             <div class="faq-banner-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px; color: var(--accent-green);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                stroke-linejoin="round" style="width: 13px; height: 13px; color: var(--accent-green);">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="12" y1="16" x2="12" y2="12"></line>
                 <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -712,11 +769,12 @@
         <div class="input-wrapper">
           <textarea id="chat-input" placeholder="Send us a message. Type Here" rows="1"></textarea>
           <button id="mic-btn" onclick="toggleVoice()" aria-label="Voice input" title="Click to speak">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-              <line x1="12" y1="19" x2="12" y2="23"/>
-              <line x1="8" y1="23" x2="16" y2="23"/>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+              <line x1="12" y1="19" x2="12" y2="23" />
+              <line x1="8" y1="23" x2="16" y2="23" />
             </svg>
           </button>
           <button id="send-btn" onclick="sendMessage()" aria-label="Send message">
@@ -882,11 +940,11 @@
         micBtn.classList.remove('recording');
         inputEl.placeholder = 'Send us a message. Type Here';
         const errorMessages = {
-          'not-allowed':  'Microphone access denied. Please allow microphone in browser settings.',
-          'no-speech':    'No speech detected. Please try again.',
-          'network':      'Network error. Check your connection.',
-          'audio-capture':'No microphone found. Please connect one.',
-          'aborted':      'Voice input cancelled.',
+          'not-allowed': 'Microphone access denied. Please allow microphone in browser settings.',
+          'no-speech': 'No speech detected. Please try again.',
+          'network': 'Network error. Check your connection.',
+          'audio-capture': 'No microphone found. Please connect one.',
+          'aborted': 'Voice input cancelled.',
         };
         const msg = errorMessages[event.error] || `Voice error: ${event.error}`;
         showVoiceToast(msg, true);
@@ -924,11 +982,11 @@
         nativeName: langNativeName,
         code: langCode
       };
-      
+
       // Update button label visually
       const shortLabel = langCode.toUpperCase();
       document.getElementById('lang-btn-label').textContent = shortLabel;
-      
+
       document.querySelectorAll('.lang-option').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.lang === langKey);
       });
@@ -1006,7 +1064,7 @@
     function appendBotBubble(text, agentCategory, step) {
       const row = document.createElement('div');
       row.className = 'msg-row bot';
-      
+
       let headerTitle = "Varsapradaya Guide";
       let headerIcon = `
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px; color: var(--accent-green);">
@@ -1168,9 +1226,9 @@
       formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
       // Convert list formatting (e.g. * Item or - Item) into structured HTML lists
-      const hasBullet = formatted.includes('\n* ') || formatted.startsWith('* ') || 
-                        formatted.includes('\n- ') || formatted.startsWith('- ') ||
-                        formatted.includes('\n&bull; ') || formatted.startsWith('&bull; ');
+      const hasBullet = formatted.includes('\n* ') || formatted.startsWith('* ') ||
+        formatted.includes('\n- ') || formatted.startsWith('- ') ||
+        formatted.includes('\n&bull; ') || formatted.startsWith('&bull; ');
 
       if (hasBullet) {
         const lines = formatted.split('\n');
