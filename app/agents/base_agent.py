@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 from app.config import settings
 from groq import AsyncGroq
 from openai import AsyncOpenAI
@@ -8,7 +9,7 @@ _openai_client = None
 _gemini_client = None
 
 
-async def _call_llm(messages: list, max_tokens: int, temperature: float) -> dict:
+async def _call_llm(messages: list, max_tokens: int, temperature: float, response_model: Optional[type] = None) -> dict:
     """
     Unified LLM caller. Supports Groq, OpenAI, and Gemini providers.
     Configured via LLM_PROVIDER in .env.
@@ -24,12 +25,17 @@ async def _call_llm(messages: list, max_tokens: int, temperature: float) -> dict
                 _groq_client = AsyncGroq(api_key=settings.GROQ_API_KEY)
             client = _groq_client
             model = "llama-3.3-70b-versatile"
-            response = await client.chat.completions.create(
-                model=model,
-                messages=messages,
-                max_tokens=max_tokens,
-                temperature=temperature,
-            )
+            
+            kwargs = {
+                "model": model,
+                "messages": messages,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            }
+            if response_model:
+                kwargs["response_format"] = {"type": "json_object"}
+                
+            response = await client.chat.completions.create(**kwargs)
             reply = response.choices[0].message.content
             input_tokens = response.usage.prompt_tokens
             output_tokens = response.usage.completion_tokens
@@ -39,15 +45,28 @@ async def _call_llm(messages: list, max_tokens: int, temperature: float) -> dict
                 _openai_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
             client = _openai_client
             model = "gpt-4o-mini"
-            response = await client.chat.completions.create(
-                model=model,
-                messages=messages,
-                max_tokens=max_tokens,
-                temperature=temperature,
-            )
-            reply = response.choices[0].message.content
-            input_tokens = response.usage.prompt_tokens
-            output_tokens = response.usage.completion_tokens
+            
+            if response_model:
+                response = await client.beta.chat.completions.parse(
+                    model=model,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    response_format=response_model,
+                )
+                reply = response.choices[0].message.content
+                input_tokens = response.usage.prompt_tokens
+                output_tokens = response.usage.completion_tokens
+            else:
+                response = await client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                )
+                reply = response.choices[0].message.content
+                input_tokens = response.usage.prompt_tokens
+                output_tokens = response.usage.completion_tokens
 
         elif provider == "gemini":
             from google import genai
@@ -102,6 +121,9 @@ async def _call_llm(messages: list, max_tokens: int, temperature: float) -> dict
                 temperature=temperature,
                 thinking_config=types.ThinkingConfig(thinking_budget=0),
             )
+            if response_model:
+                config.response_mime_type = "application/json"
+                config.response_schema = response_model
 
             import asyncio
             max_retries = 3
@@ -133,12 +155,28 @@ async def _call_llm(messages: list, max_tokens: int, temperature: float) -> dict
             raise ValueError(f"Unsupported LLM_PROVIDER: '{settings.LLM_PROVIDER}'. Use 'groq', 'openai', or 'gemini'.")
 
         # Beautiful console logging for LLM calls (full clarity on query, response, and tokens)
-        print(f"\n{'='*60}")
-        print(f"[*] [LLM CALL] Provider: {provider.upper()} | Model: {model}")
-        print(f"    Prompt: '{messages[-1]['content'] if messages else 'N/A'}'")
-        print(f"    Response: '{reply}'")
-        print(f"    Tokens: Input={input_tokens} | Output={output_tokens} | Total={input_tokens + output_tokens}")
-        print(f"{'='*60}\n")
+        try:
+            print(f"\n{'='*60}")
+            print(f"[*] [LLM CALL] Provider: {provider.upper()} | Model: {model}")
+            print(f"    Prompt: '{messages[-1]['content'] if messages else 'N/A'}'")
+            print(f"    Response: '{reply}'")
+            print(f"    Tokens: Input={input_tokens} | Output={output_tokens} | Total={input_tokens + output_tokens}")
+            print(f"{'='*60}\n")
+        except UnicodeEncodeError:
+            try:
+                safe_prompt = (messages[-1]['content'] if messages else 'N/A').encode('ascii', errors='replace').decode('ascii')
+                safe_reply = reply.encode('ascii', errors='replace').decode('ascii')
+                print(f"\n{'='*60}")
+                print(f"[*] [LLM CALL] Provider: {provider.upper()} | Model: {model}")
+                print(f"    Prompt: '{safe_prompt}'")
+                print(f"    Response: '{safe_reply}'")
+                print(f"    Tokens: Input={input_tokens} | Output={output_tokens} | Total={input_tokens + output_tokens}")
+                print(f"{'='*60}\n")
+            except Exception:
+                pass
+        except Exception:
+            pass
+
 
         return {
             "reply":         reply,

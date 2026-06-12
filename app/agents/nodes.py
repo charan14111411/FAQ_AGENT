@@ -1,5 +1,7 @@
 import re
 import time
+import json
+from typing import Optional, List
 from app.agents.state import ChatState
 from app.agents.base_agent import _call_llm
 from app.data.personas import get_persona, get_persona_intro
@@ -916,6 +918,262 @@ async def chat_node(state: ChatState) -> dict:
     return res
 
 
+from pydantic import BaseModel, Field
+
+class ActionContentGridItem(BaseModel):
+    label: str = Field(description="A translated and localized label for this screenshot, e.g., 'Main Dashboard' or 'Plantation Health Map'")
+    image: str = Field(description="The exact local path of the image asset, e.g., './assets/images/example/app_dashboard_example.png'")
+
+class ActionContent(BaseModel):
+    title: Optional[str] = Field(None, description="A translated and localized title for the details block")
+    bullets: Optional[List[str]] = Field(None, description="An array of 3-4 translated and localized bullet points explaining specifications relevant to the reply. Use bold tags for labels, e.g. '**Monsoon Ruggedization:** IP67 waterproofing...'")
+    image: Optional[str] = Field(None, description="The exact local path of the image asset, e.g., './assets/images/example/device_example.png'")
+    grid: Optional[List[ActionContentGridItem]] = Field(None, description="An optional list of screenshot grid items if displaying screenshots (exactly 2 items for app screens)")
+
+class DynamicAction(BaseModel):
+    id: str = Field(description="The unique identifier for the action: 'device_details' | 'app_features' | 'app_screens'")
+    label: str = Field(description="A short translated and localized button label, e.g., '🌱 Know More about Devices' or '📱 Know More about App'")
+    style: str = Field(description="The CSS style classification for the button: 'primary' | 'secondary'")
+    content: ActionContent = Field(description="The dynamic details content displayed when clicking the action button")
+
+class InteractivePayload(BaseModel):
+    interactive_type: Optional[str] = Field(None, description="The classified category for the dynamic component: 'device' | 'app' or null")
+    interactive_actions: Optional[List[DynamicAction]] = Field(None, description="The list of dynamic action buttons and their contents. null if interactive_type is null.")
+
+
+async def _generate_interactive_payload(reply: str, language: str) -> dict:
+    """
+    Analyzes the assistant's reply and target language, and dynamically generates
+    a Server-Driven UI payload. If it's about devices or the mobile app, it returns
+    fully localized buttons and details. Otherwise returns None.
+    """
+    target_lang = (language or "english").strip().lower()
+    
+    prompt = (
+        "You are a Server-Driven UI generator for Varsapradaya.\n"
+        "Your task is to analyze the assistant's reply and target language, and output a JSON object indicating if any interactive buttons should be shown under the chat bubble, and if so, their fully translated and context-specific content.\n\n"
+        f"Target Language: {target_lang}\n\n"
+        "Categories of interest:\n"
+        "1. 'device' (related to physical IoT sensors, hardware, slopes, monsoons, weather proofing, solar panels, LoRaWAN transmitters, warranty, installation, mounting anchors)\n"
+        "2. 'app' (related to the FarmFuture mobile app OR the FarmFuture web platform / web dashboard / command center, alert notifications, color-coded dashboard metrics, WhatsApp alerts, maps, login, screens, crop health dashboard)\n"
+        "3. 'none' (general topics, greetings, office location, investments, labor tracking, compliance, carbon sequestration)\n\n"
+        "Available Image Assets in the system:\n"
+        "- 'microclime': Photo/mockup of the physical MicroClime weather station sensor device node.\n"
+        "- 'soilsync': Photo/mockup of the physical SoilSync soil moisture & nutrient (NPK) sensor node.\n"
+        "- 'yieldwhisperer': Photo/mockup of the Yield Whisperer canopy & crop sensor package.\n"
+        "- 'rainsense': Photo/mockup of the RainSense rain gauge sensor.\n"
+        "- 'app_dashboard': Screenshot mockup of the mobile app/web platform main dashboard and alerts interface.\n"
+        "- 'app_crop_health': Screenshot mockup of the estate crop zones and NDVI health map screen.\n"
+        "- 'app_advisory': Screenshot mockup of the crop advisory and expert consulting screen.\n"
+        "- 'app_agronomy': Screenshot mockup of the agronomic practices and suggestions screen.\n"
+        "- 'app_calendar': Screenshot mockup of the calendar and agricultural task planner screen.\n"
+        "- 'app_cashbook': Screenshot mockup of the cashbook and financial expense tracker screen.\n"
+        "- 'app_language': Screenshot mockup of the multilingual language selection screen.\n"
+        "- 'app_login': Screenshot mockup of the registration and secure login screen.\n\n"
+        "Rules for Including Images:\n"
+        "- The 'image' field (under 'content' or 'grid' items) must be one of the exact available image asset keys listed above.\n"
+        "- Do NOT output raw file paths (like './assets/...') for the images; output only the exact asset key string.\n"
+        "- The LLM must dynamically select the most relevant assets based on what the reply discusses.\n\n"
+        "Rules for 'device':\n"
+        "- \"interactive_type\" must be \"device\".\n"
+        "- \"interactive_actions\" must contain exactly one action object with id 'device_details', primary style.\n"
+        "- Rules for Device Details Grid vs Image:\n"
+        "  - If the assistant's reply is specifically about exactly one device (e.g. only SoilSync, only MicroClime, or only RainSense), set its image field under content to that device key (e.g. 'soilsync', 'microclime', or 'rainsense') and set grid to null.\n"
+        "  - If the assistant's reply lists all four hardware packages/devices (Yield Whisperer, SoilSync, MicroClime, RainSense) or discusses multiple devices, set the image field under content to null and include a grid containing all 4 devices with their keys ('yieldwhisperer', 'soilsync', 'microclime', 'rainsense') and fully translated/localized labels.\n"
+        "- Dynamic Button Labeling Rule:\n"
+        "  - If the assistant's reply is specifically about one device, label the button using that device's name (e.g. label the action as '🌱 Know More about RainSense', '🌱 Know More about SoilSync', or '🌱 Know More about MicroClime').\n"
+        "  - If the assistant's reply discusses multiple devices/packages or devices in general, label the button using 'Devices' (e.g. label the action as '🌱 Know More about Devices').\n\n"
+        "Rules for 'app':\n"
+        "- \"interactive_type\" must be \"app\".\n"
+        "- \"interactive_actions\" can contain:\n"
+        "  - Action 1: id 'app_features', primary style, explaining mobile app or web platform features and metrics. Set its image field to null (no image, only text bullets).\n"
+        "  - Action 2: id 'app_screens', secondary style, containing a grid of relevant screenshots (2 to 4 items, based on context and relevance to the reply) chosen from the list above that best match the query topic. IMPORTANT: Action 2 must ONLY be included if the reply is specifically about the MOBILE app. If the reply is about the web platform or web dashboard, Action 2 must be omitted completely.\n"
+        "- Dynamic Button Labeling & Selection Rules:\n"
+        "  - If the assistant's reply is a general introduction to FarmFuture or just provides the website address (without discussing specific screens, maps, reports, or details), you must label Action 1 as '💻 Know More about FarmFuture' or '📱 Know More about FarmFuture', and you MUST omit Action 2 (do not show the screens button) because there are no specific dashboard screens relevant to a general introduction.\n"
+        "  - If the assistant's reply is about the mobile app features, label Action 1 as '📱 Know More about App' and include Action 2 (labeled as 'App Screens').\n"
+        "  - If the assistant's reply is about the web platform, web dashboard, or command center features, label Action 1 as '💻 Know More about Web Dashboard' or '💻 Know More about FarmFuture', and you MUST OMIT Action 2 (do not show any screens button) because we do not have web dashboard screens.\n"
+        "  - Ensure the title under 'content' matches this terminology (e.g., 'FarmFuture Web Platform Features', 'FarmFuture Mobile App Features', or 'FarmFuture Platform Overview').\n\n"
+        "Rules for 'none':\n"
+        "- \"interactive_type\" must be null.\n"
+        "- \"interactive_actions\" must be null.\n\n"
+        "Ensure all output text (labels, titles, bullets, grid item labels) is fully translated into the target language, matching the language of the conversation."
+    )
+    
+    messages = [
+        {"role": "system", "content": prompt},
+        {"role": "user", "content": reply}
+    ]
+    
+    default_payload = {"interactive_type": None, "interactive_actions": None}
+    
+    try:
+        # Request native structured output by passing response_model
+        result = await _call_llm(messages, max_tokens=600, temperature=0.0, response_model=InteractivePayload)
+        content = result["reply"].strip()
+        
+        # Clean markdown code block if present
+        if content.startswith("```"):
+            content = content.split("\n", 1)[1]
+            if content.endswith("```"):
+                content = content.rsplit("\n", 1)[0]
+            elif content.endswith("```json"):
+                content = content.rsplit("\n", 1)[0]
+        content = content.strip("`").strip()
+        if content.startswith("json"):
+            content = content[4:].strip()
+            
+        parsed = InteractivePayload.model_validate_json(content)
+        itype = parsed.interactive_type
+        iactions = parsed.interactive_actions
+        
+        if itype not in ["device", "app"]:
+            return default_payload
+
+        # Convert Pydantic list of actions to list of dicts for API response
+        iactions_dict = [action.model_dump() for action in iactions] if iactions else None
+
+        # Hard constraint: Never return Action 2 ('app_screens') if it's about the web platform or web dashboard.
+        # This acts as a robust programmatic safeguard in case the LLM includes it.
+        if itype == "app" and iactions_dict:
+            reply_lower = reply.lower()
+            is_web = any(w in reply_lower for w in ["web", "dashboard", "farmfuture.io", "command center", "browser"])
+            if not is_web:
+                for action in iactions_dict:
+                    label_val = action.get("label") or ""
+                    label_lower = label_val.lower()
+                    content_val = action.get("content") or {}
+                    title_val = content_val.get("title") or ""
+                    title_lower = title_val.lower()
+                    if "web" in label_lower or "web" in title_lower or "dashboard" in label_lower or "dashboard" in title_lower:
+                        is_web = True
+                        break
+            if is_web:
+                iactions_dict = [a for a in iactions_dict if a.get("id") != "app_screens"]
+
+
+        # Post-process image keys to actual config paths using app config settings
+        from app.config import settings as app_settings
+        IMAGE_MAP = {
+            "microclime": app_settings.IMAGE_PATH_MICROCLIME,
+            "soilsync": app_settings.IMAGE_PATH_SOILSYNC,
+            "yieldwhisperer": app_settings.IMAGE_PATH_YIELDWHISPERER,
+            "rainsense": app_settings.IMAGE_PATH_RAINSENSE,
+            "app_dashboard": app_settings.IMAGE_PATH_APP_DASHBOARD,
+            "app_crop_health": app_settings.IMAGE_PATH_APP_CROP_HEALTH,
+            "app_advisory": app_settings.IMAGE_PATH_APP_ADVISORY,
+            "app_agronomy": app_settings.IMAGE_PATH_APP_AGRONOMY,
+            "app_calendar": app_settings.IMAGE_PATH_APP_CALENDAR,
+            "app_cashbook": app_settings.IMAGE_PATH_APP_CASHBOOK,
+            "app_language": app_settings.IMAGE_PATH_APP_LANGUAGE,
+            "app_login": app_settings.IMAGE_PATH_APP_LOGIN,
+            
+            # backward compatibility keys
+            "device_example": app_settings.IMAGE_PATH_DEVICE,
+            "app_screen": app_settings.IMAGE_PATH_APP_CROP_HEALTH
+        }
+
+        # Fallback mappings for fuzzy resolution
+        def resolve_fuzzy(key: str) -> str:
+            if not key:
+                return ""
+            k = key.lower()
+            if "microclime" in k or "weather" in k:
+                return app_settings.IMAGE_PATH_MICROCLIME
+            if "soilsync" in k or "soil" in k or "nutrient" in k or "npk" in k:
+                return app_settings.IMAGE_PATH_SOILSYNC
+            if "yield" in k or "whisperer" in k:
+                return app_settings.IMAGE_PATH_YIELDWHISPERER
+            if "rain" in k or "sense" in k:
+                return app_settings.IMAGE_PATH_RAINSENSE
+            if "crop" in k or "health" in k or "screen" in k:
+                return app_settings.IMAGE_PATH_APP_CROP_HEALTH
+            if "advisory" in k or "expert" in k:
+                return app_settings.IMAGE_PATH_APP_ADVISORY
+            if "agronom" in k or "practice" in k:
+                return app_settings.IMAGE_PATH_APP_AGRONOMY
+            if "calender" in k or "calendar" in k or "task" in k:
+                return app_settings.IMAGE_PATH_APP_CALENDAR
+            if "cashbook" in k or "expense" in k or "finance" in k:
+                return app_settings.IMAGE_PATH_APP_CASHBOOK
+            if "language" in k or "lang" in k:
+                return app_settings.IMAGE_PATH_APP_LANGUAGE
+            if "login" in k or "register" in k or "auth" in k:
+                return app_settings.IMAGE_PATH_APP_LOGIN
+            if "dashboard" in k or "app" in k or "main" in k:
+                return app_settings.IMAGE_PATH_APP_DASHBOARD
+            # Defaults
+            if "device" in k:
+                return app_settings.IMAGE_PATH_DEVICE
+            return app_settings.IMAGE_PATH_APP_DASHBOARD
+
+        if iactions_dict:
+            for action in iactions_dict:
+                a_content = action.get("content", {})
+                
+                # Resolve single content image
+                img_key = a_content.get("image")
+                if img_key and img_key in IMAGE_MAP:
+                    a_content["image"] = IMAGE_MAP[img_key]
+                elif img_key:
+                    # fallback check if LLM included path or fuzzy key
+                    a_content["image"] = resolve_fuzzy(img_key)
+                
+                # Resolve grid images
+                if "grid" in a_content and a_content["grid"]:
+                    for item in a_content["grid"]:
+                        grid_img_key = item.get("image")
+                        if grid_img_key and grid_img_key in IMAGE_MAP:
+                            item["image"] = IMAGE_MAP[grid_img_key]
+                        elif grid_img_key:
+                            # fallback check if LLM included path or fuzzy key
+                            item["image"] = resolve_fuzzy(grid_img_key)
+            
+        return {
+            "interactive_type": itype,
+            "interactive_actions": iactions_dict
+        }
+    except Exception as e:
+        logger.warning(f"Error generating dynamic interactive payload: {e}")
+        return default_payload
+
+
+async def _rewrite_query_with_llm(user_msg: str, history: list) -> str:
+    """
+    Formulates a standalone search query from the user's latest message and conversation history
+    by resolving pronouns and ellipsis. If the history is empty, returns the original message.
+    """
+    if not history:
+        return user_msg
+        
+    history_str = ""
+    for msg in history[-3:]:
+        role = msg.get("role", "")
+        content = msg.get("content", "")
+        if role and content:
+            history_str += f"{role.upper()}: {content}\n"
+        
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are a search query reformulation assistant.\n"
+                "Given a conversation history and a user's latest message, rewrite the latest message into a standalone, concise search query "
+                "that captures the user's true intent, resolving any pronouns (like 'it', 'they', 'this', 'that', 'them') or ellipsis (like 'tell me more', 'why', 'how').\n"
+                "Do NOT write any explanation or conversational response. Reply with ONLY the reformulated standalone query string. If the message is already a standalone question, output the original message as is."
+            )
+        },
+        {"role": "user", "content": f"CONVERSATION HISTORY:\n{history_str}\nLATEST MESSAGE: '{user_msg}'"}
+    ]
+    
+    try:
+        result = await _call_llm(messages, max_tokens=60, temperature=0.0)
+        rewritten = result["reply"].strip().strip("'\"")
+        return rewritten
+    except Exception as e:
+        logger.warning(f"Error reformulating search query: {e}")
+        return user_msg
+
+
 async def _answer_faq(state: ChatState, user_msg: str) -> dict:
     """
     Full RAG pipeline:
@@ -940,9 +1198,16 @@ async def _answer_faq(state: ChatState, user_msg: str) -> dict:
         # 2. Conversation history (last 5 messages for context efficiency)
         history = await get_last_10_messages(db, state["session_id"])
         history = history[-5:]  # Trim to last 5 to reduce token load
+        history_prev = history[:-1]  # history excluding the message we just saved
 
-        # 3. RAG retrieval
-        context = await retrieve(db, user_msg, top_k=3)
+        # 3. Rewrite query for RAG retrieval to handle pronouns/ellipses
+        search_query = user_msg
+        if history_prev:
+            search_query = await _rewrite_query_with_llm(user_msg, history_prev)
+            logger.info(f"Query reformulated: '{user_msg}' -> '{search_query}'")
+
+        # 4. RAG retrieval
+        context = await retrieve(db, search_query, top_k=3)
         rag_used = bool(context and context.strip())
 
         # 4. Build system prompt
@@ -1062,10 +1327,16 @@ async def _answer_faq(state: ChatState, user_msg: str) -> dict:
             },
         )
 
+        ui_payload = await _generate_interactive_payload(reply, language)
+        interactive_type = ui_payload.get("interactive_type")
+        interactive_actions = ui_payload.get("interactive_actions")
+
     return {
         "reply": reply,
         "agent_name": f"{category}_agent",
         "step": "chatting",
+        "interactive_type": interactive_type,
+        "interactive_actions": interactive_actions,
     }
 
 

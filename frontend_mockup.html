@@ -259,38 +259,152 @@
       color: var(--text);
     }
 
-    /* ─── Onboarding Pills ─── */
-    .onboarding-pills {
+    /* ─── Onboarding Dropdown ─── */
+    .onboarding-dropdown-container {
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+      flex-direction: column;
+      gap: 8px;
       margin-left: 48px;
       /* aligns to match text offset under bot avatar */
       animation: bubbleAppear 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      max-width: 280px;
+      width: 100%;
     }
 
-    .pill-btn {
+    .role-select {
       background: #ffffff;
       border: 1.5px solid var(--primary-green);
       color: var(--primary-green);
-      border-radius: 20px;
-      padding: 8px 18px;
-      font-size: 13.5px;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s ease-in-out;
+      box-shadow: 0 2px 4px rgba(0, 66, 37, 0.02);
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23004225' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 16px;
+      padding-right: 40px;
+    }
+
+    .role-select:hover {
+      background-color: rgba(0, 66, 37, 0.02);
+      box-shadow: 0 4px 8px rgba(0, 66, 37, 0.06);
+    }
+
+    .role-select:focus {
+      box-shadow: 0 0 0 3px rgba(0, 66, 37, 0.1);
+    }
+
+    /* ─── Interactive FAQ Features ─── */
+    .faq-interactive-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+      border-top: 1.5px solid rgba(0, 66, 37, 0.08);
+      padding-top: 12px;
+    }
+
+    .interactive-action-btn {
+      background: transparent;
+      border: 1.5px solid var(--primary-green);
+      color: var(--primary-green);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 12.5px;
       font-weight: 500;
       cursor: pointer;
       font-family: inherit;
       transition: all 0.2s ease-in-out;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.01);
+      outline: none;
     }
 
-    .pill-btn:hover {
-      background: rgba(0, 66, 37, 0.04);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 8px rgba(0, 66, 37, 0.08);
+    .interactive-action-btn:hover {
+      background: var(--primary-green);
+      color: #ffffff;
     }
 
-    .pill-btn:active {
-      transform: translateY(0);
+    .interactive-action-btn.secondary {
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+    }
+
+    .interactive-action-btn.secondary:hover {
+      background: var(--accent-green);
+      color: #ffffff;
+    }
+
+    .interactive-content-container {
+      margin-top: 12px;
+      background: rgba(0, 66, 37, 0.03);
+      border-left: 3.5px solid var(--primary-green);
+      padding: 12px;
+      border-radius: 4px;
+      font-size: 13.5px;
+      animation: slideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .interactive-content-container h4 {
+      color: var(--primary-green);
+      margin-bottom: 6px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .interactive-content-container ul {
+      margin: 6px 0;
+      padding-left: 18px;
+      list-style-type: disc;
+    }
+
+    .interactive-content-container li {
+      margin: 4px 0;
+      line-height: 1.45;
+      color: var(--text);
+    }
+
+    .interactive-mockup-img {
+      width: 100%;
+      max-width: 240px;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 66, 37, 0.12);
+      margin-top: 8px;
+      display: block;
+      box-shadow: 0 4px 12px rgba(0, 66, 37, 0.05);
+    }
+
+    .screens-grid {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .screens-grid > div {
+      flex: 1;
+      min-width: 150px;
+      max-width: 180px;
+    }
+
+    .screens-grid .interactive-mockup-img {
+      max-width: 100%;
     }
 
     /* ─── Typing Indicator ─── */
@@ -564,8 +678,9 @@
         gap: 16px;
       }
 
-      .onboarding-pills {
+      .onboarding-dropdown-container {
         margin-left: 0;
+        max-width: 100%;
       }
 
       .bubble {
@@ -1001,36 +1116,64 @@
       }
     });
 
-    // ─── Show/Hide Onboarding Pills ───
-    function showPills() {
-      let pills = document.getElementById('chat-onboarding-pills');
-      if (!pills) {
-        pills = document.createElement('div');
-        pills.id = 'chat-onboarding-pills';
-        pills.className = 'onboarding-pills';
-        pills.innerHTML = `
-          <button class="pill-btn" onclick="clickPill('grower', 'i am a grower', '🌱 Grower Advisor')">I'm a grower</button>
-          <button class="pill-btn" onclick="clickPill('investor', 'i am an investor', '💰 Investor Advisor')">I'm an investor</button>
-          <button class="pill-btn" onclick="clickPill('corporate', 'corporate partnership', '🏢 Business Advisor')">Corporate / Partnership</button>
-          <button class="pill-btn" onclick="clickPill('exploring', 'just exploring', '🔍 Explorer Guide')">Just exploring</button>
+    // ─── Show/Hide Onboarding Dropdown ───
+    function showDropdown() {
+      let dropdownContainer = document.getElementById('chat-onboarding-dropdown');
+      if (!dropdownContainer) {
+        dropdownContainer = document.createElement('div');
+        dropdownContainer.id = 'chat-onboarding-dropdown';
+        dropdownContainer.className = 'onboarding-dropdown-container';
+        dropdownContainer.innerHTML = `
+          <select class="role-select" onchange="selectRole(this)">
+            <option value="" disabled selected>Select your role...</option>
+            <option value="grower">🌱 I'm a grower</option>
+            <option value="investor">💰 I'm an investor</option>
+            <option value="corporate">🏢 Corporate / Partnership</option>
+            <option value="exploring">🔍 Just exploring</option>
+          </select>
         `;
       }
-      pills.style.display = 'flex';
-      insertBeforeTyping(pills);
+      // Reset select value to default
+      const selectEl = dropdownContainer.querySelector('select');
+      if (selectEl) {
+        selectEl.value = "";
+      }
+      dropdownContainer.style.display = 'flex';
+      insertBeforeTyping(dropdownContainer);
       scrollToBottom();
     }
 
-    function hidePills() {
-      const pills = document.getElementById('chat-onboarding-pills');
-      if (pills) {
-        pills.style.display = 'none';
+    function hideDropdown() {
+      const dropdownContainer = document.getElementById('chat-onboarding-dropdown');
+      if (dropdownContainer) {
+        dropdownContainer.style.display = 'none';
       }
     }
 
-    // ─── Pill button click ───
-    function clickPill(category, message, agentLabel) {
+    // ─── Dropdown Role Selection ───
+    function selectRole(selectElement) {
+      const category = selectElement.value;
+      if (!category) return;
+
+      let message = "";
+      let agentLabel = "";
+
+      if (category === "grower") {
+        message = "i am a grower";
+        agentLabel = "🌱 Grower Advisor";
+      } else if (category === "investor") {
+        message = "i am an investor";
+        agentLabel = "💰 Investor Advisor";
+      } else if (category === "corporate") {
+        message = "corporate partnership";
+        agentLabel = "🏢 Business Advisor";
+      } else if (category === "exploring") {
+        message = "just exploring";
+        agentLabel = "🔍 Explorer Guide";
+      }
+
       currentAgent = category;
-      hidePills();
+      hideDropdown();
       appendUserBubble(agentLabel);
       sendToAPI(message);
     }
@@ -1043,7 +1186,7 @@
       input.value = '';
       input.style.height = '36px';
 
-      hidePills();
+      hideDropdown();
       appendUserBubble(text);
       sendToAPI(text);
     }
@@ -1060,8 +1203,103 @@
       scrollToBottom();
     }
 
+    // ─── Interactive Actions Click Handler (Stateful Dynamic Toggle/Switch) ───
+    function showDynamicDetails(bubbleId, actionId, btn) {
+      const actions = window.interactiveActions[bubbleId];
+      if (!actions) return;
+      const action = actions.find(a => a.id === actionId);
+      if (!action) return;
+      
+      const bubble = btn.closest('.bubble.bot');
+      if (!bubble) return;
+      
+      const container = bubble.querySelector('.interactive-content-container');
+      if (!container) return;
+
+      const actionGroup = btn.closest('.faq-interactive-actions');
+      
+      // Determine if the clicked button is already active
+      const isAlreadyActive = btn.classList.contains('active-state');
+      
+      if (isAlreadyActive) {
+        // Toggle close: collapse details
+        container.style.display = 'none';
+        container.innerHTML = '';
+        btn.classList.remove('active-state');
+        
+        // Restore styling on all buttons in the group
+        if (actionGroup) {
+          actionGroup.querySelectorAll('.interactive-action-btn').forEach(b => {
+            b.classList.remove('active-state');
+            b.style.opacity = "1.0";
+            b.style.background = "transparent";
+            b.style.color = b.classList.contains('secondary') ? "var(--accent-green)" : "var(--primary-green)";
+          });
+        }
+      } else {
+        // Toggle open or switch: build and show content
+        const content = action.content;
+        let html = "";
+        
+        if (content.title) {
+          html += `<h4>${escapeHtml(content.title)}</h4>`;
+        }
+        
+        if (content.bullets && content.bullets.length > 0) {
+          html += `<ul>`;
+          content.bullets.forEach(bullet => {
+            // Allow dynamic ** or <strong> formatting in bullet points
+            let formattedBullet = escapeHtml(bullet);
+            formattedBullet = formattedBullet.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            formattedBullet = formattedBullet.replace(/&lt;strong&gt;(.*?)&lt;\/strong&gt;/g, '<strong>$1</strong>');
+            formattedBullet = formattedBullet.replace(/&amp;lt;strong&amp;gt;(.*?)&amp;lt;\/strong&amp;gt;/g, '<strong>$1</strong>');
+            html += `<li>${formattedBullet}</li>`;
+          });
+          html += `</ul>`;
+        }
+        
+        if (content.image) {
+          html += `<img src="${escapeHtml(content.image)}" alt="${escapeHtml(content.title || 'Details')}" class="interactive-mockup-img" />`;
+        }
+        
+        if (content.grid && content.grid.length > 0) {
+          html += `<div class="screens-grid">`;
+          content.grid.forEach(item => {
+            html += `
+              <div>
+                <p style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">${escapeHtml(item.label)}</p>
+                <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.label)}" class="interactive-mockup-img" />
+              </div>
+            `;
+          });
+          html += `</div>`;
+        }
+        
+        container.innerHTML = html;
+        container.style.display = 'block';
+        scrollToBottom();
+        
+        // Update styling in the button group: set active, make siblings look inactive but clickable
+        if (actionGroup) {
+          actionGroup.querySelectorAll('.interactive-action-btn').forEach(b => {
+            if (b === btn) {
+              b.classList.add('active-state');
+              b.style.opacity = "1.0";
+              b.style.background = b.classList.contains('secondary') ? "var(--accent-green)" : "var(--primary-green)";
+              b.style.color = "#ffffff";
+            } else {
+              b.classList.remove('active-state');
+              b.style.opacity = "0.6"; // slightly dimmed but fully clickable
+              b.style.background = "transparent";
+              b.style.color = b.classList.contains('secondary') ? "var(--accent-green)" : "var(--primary-green)";
+            }
+          });
+        }
+      }
+    }
+
     // ─── Append bot bubble ───
-    function appendBotBubble(text, agentCategory, step) {
+    function appendBotBubble(text, agentCategory, step, interactiveActions) {
       const row = document.createElement('div');
       row.className = 'msg-row bot';
 
@@ -1092,6 +1330,26 @@
         `;
       }
 
+      // Generate dynamic Server-Driven UI buttons
+      let buttonsHtml = "";
+      const bubbleId = 'bot-msg-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+      
+      if (interactiveActions && interactiveActions.length > 0) {
+        window.interactiveActions = window.interactiveActions || {};
+        window.interactiveActions[bubbleId] = interactiveActions;
+        
+        buttonsHtml = `<div class="faq-interactive-actions">`;
+        interactiveActions.forEach(action => {
+          const btnClass = action.style === 'secondary' ? 'interactive-action-btn secondary' : 'interactive-action-btn';
+          buttonsHtml += `
+            <button class="${btnClass}" onclick="showDynamicDetails('${bubbleId}', '${action.id}', this)">
+              ${escapeHtml(action.label)}
+            </button>
+          `;
+        });
+        buttonsHtml += `</div>`;
+      }
+
       row.innerHTML = `
         <div class="avatar bot-avatar" style="background: var(--primary-green); color: #ffffff;">FF</div>
         <div class="bubble bot">
@@ -1100,6 +1358,8 @@
             <span>${headerTitle}</span>
           </div>
           <div class="faq-banner-body">${formatText(text)}</div>
+          ${buttonsHtml}
+          <div class="interactive-content-container" style="display: none;"></div>
         </div>
       `;
       insertBeforeTyping(row);
@@ -1174,13 +1434,13 @@
           currentAgent = data.agent.replace('_agent', '');
         }
 
-        appendBotBubble(data.reply, currentAgent, data.step);
+        appendBotBubble(data.reply, currentAgent, data.step, data.interactive_actions);
 
-        // Control onboarding pills dynamically based on step
+        // Control onboarding dropdown dynamically based on step
         if (data.step === 'start') {
-          showPills();
+          showDropdown();
         } else {
-          hidePills();
+          hideDropdown();
         }
 
         if (data.step === 'ended') {
@@ -1300,9 +1560,9 @@
       }
     });
 
-    // Show initial pills and check scroll on load
+    // Show initial dropdown and check scroll on load
     window.addEventListener('load', () => {
-      showPills();
+      showDropdown();
       scrollToBottom();
     });
   </script>

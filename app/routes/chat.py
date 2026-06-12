@@ -162,6 +162,8 @@ async def handle_chat(req: ChatRequest, request: Request, background_tasks: Back
             "language": language,
             "language_code": language_code,              # ISO 639-1 code (e.g. "te") — stored for programmatic use
             "language_native_name": language_native_name,  # e.g. "తెలుగు" — used in LLM prompt
+            "interactive_type": None,
+            "interactive_actions": None,
         }
 
         # ── 7. Run the graph ──────────────────────────────────────────────────
@@ -213,6 +215,8 @@ async def handle_chat(req: ChatRequest, request: Request, background_tasks: Back
             reply=result.get("reply", ""),
             step=result.get("step", "start"),
             agent=result.get("agent_name"),
+            interactive_type=result.get("interactive_type"),
+            interactive_actions=result.get("interactive_actions"),
         )
 
     except Exception as e:

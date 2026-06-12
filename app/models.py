@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
 
 class ChatRequest(BaseModel):
@@ -28,11 +28,15 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     """
     Response from the LangGraph-powered FAQ agent.
-    reply:      The bot's text response.
-    step:       Current conversation step (start / await_name / chatting / etc.)
-    agent:      Which agent produced the reply (grower_agent, corporate_agent, etc.)
-                None during onboarding steps.
+    reply:            The bot's text response.
+    step:             Current conversation step (start / await_name / chatting / etc.)
+    agent:            Which agent produced the reply (grower_agent, corporate_agent, etc.)
+                      None during onboarding steps.
+    interactive_type: UI component payload instruction ("device" | "app" | None).
+    interactive_actions: Server-Driven UI action configurations.
     """
     reply: str
     step:  str
     agent: Optional[str] = None
+    interactive_type: Optional[str] = None
+    interactive_actions: Optional[List[Dict[str, Any]]] = None

@@ -28,6 +28,8 @@ class ChatState(TypedDict):
     phone_attempts: int             # Invalid phone entry counter
     email_attempts: int             # Invalid email entry counter
     farewell_attempts: int          # Counter for polite farewell/end attempts
+    interactive_type: Optional[str] # "device" | "app" | None - UI component indicator
+    interactive_actions: Optional[list] # Server-Driven UI action configs
     classify_attempts: int          # Counter for category classification retries
     language:              Optional[str]  # Canonical language name: 'telugu', 'hindi', 'english' etc.
     language_code:         Optional[str]  # ISO 639-1 code: 'te', 'hi', 'en' etc. Stored for programmatic use
