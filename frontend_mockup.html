@@ -259,46 +259,38 @@
       color: var(--text);
     }
 
-    /* ─── Onboarding Dropdown ─── */
-    .onboarding-dropdown-container {
+    /* ─── Onboarding Pills ─── */
+    .onboarding-pills {
       display: flex;
-      flex-direction: column;
-      gap: 8px;
+      flex-wrap: wrap;
+      gap: 10px;
       margin-left: 48px;
       /* aligns to match text offset under bot avatar */
       animation: bubbleAppear 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      max-width: 280px;
-      width: 100%;
     }
 
-    .role-select {
+    .pill-btn {
       background: #ffffff;
       border: 1.5px solid var(--primary-green);
       color: var(--primary-green);
-      border-radius: 8px;
-      padding: 10px 16px;
-      font-size: 14px;
+      border-radius: 20px;
+      padding: 8px 18px;
+      font-size: 13.5px;
       font-weight: 500;
       cursor: pointer;
       font-family: inherit;
-      outline: none;
       transition: all 0.2s ease-in-out;
-      box-shadow: 0 2px 4px rgba(0, 66, 37, 0.02);
-      appearance: none;
-      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23004225' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-      background-repeat: no-repeat;
-      background-position: right 14px center;
-      background-size: 16px;
-      padding-right: 40px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.01);
     }
 
-    .role-select:hover {
-      background-color: rgba(0, 66, 37, 0.02);
-      box-shadow: 0 4px 8px rgba(0, 66, 37, 0.06);
+    .pill-btn:hover {
+      background: rgba(0, 66, 37, 0.04);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 66, 37, 0.08);
     }
 
-    .role-select:focus {
-      box-shadow: 0 0 0 3px rgba(0, 66, 37, 0.1);
+    .pill-btn:active {
+      transform: translateY(0);
     }
 
     /* ─── Interactive FAQ Features ─── */
@@ -678,9 +670,8 @@
         gap: 16px;
       }
 
-      .onboarding-dropdown-container {
+      .onboarding-pills {
         margin-left: 0;
-        max-width: 100%;
       }
 
       .bubble {
@@ -1117,63 +1108,36 @@
     });
 
     // ─── Show/Hide Onboarding Dropdown ───
-    function showDropdown() {
-      let dropdownContainer = document.getElementById('chat-onboarding-dropdown');
-      if (!dropdownContainer) {
-        dropdownContainer = document.createElement('div');
-        dropdownContainer.id = 'chat-onboarding-dropdown';
-        dropdownContainer.className = 'onboarding-dropdown-container';
-        dropdownContainer.innerHTML = `
-          <select class="role-select" onchange="selectRole(this)">
-            <option value="" disabled selected>Select your role...</option>
-            <option value="grower">🌱 I'm a grower</option>
-            <option value="investor">💰 I'm an investor</option>
-            <option value="corporate">🏢 Corporate / Partnership</option>
-            <option value="exploring">🔍 Just exploring</option>
-          </select>
+    // ─── Show/Hide Onboarding Pills ───
+    function showPills() {
+      let pills = document.getElementById('chat-onboarding-pills');
+      if (!pills) {
+        pills = document.createElement('div');
+        pills.id = 'chat-onboarding-pills';
+        pills.className = 'onboarding-pills';
+        pills.innerHTML = `
+          <button class="pill-btn" onclick="clickPill('grower', 'grower', '🌱 Grower')">Grower</button>
+          <button class="pill-btn" onclick="clickPill('investor', 'investor', '💰 Investor')">Investor</button>
+          <button class="pill-btn" onclick="clickPill('corporate', 'corporate partnership', '🏢 Corporate / Partnership')">Corporate / Partnership</button>
+          <button class="pill-btn" onclick="clickPill('exploring', 'just exploring', '🔍 Just exploring')">Just exploring</button>
         `;
       }
-      // Reset select value to default
-      const selectEl = dropdownContainer.querySelector('select');
-      if (selectEl) {
-        selectEl.value = "";
-      }
-      dropdownContainer.style.display = 'flex';
-      insertBeforeTyping(dropdownContainer);
+      pills.style.display = 'flex';
+      insertBeforeTyping(pills);
       scrollToBottom();
     }
 
-    function hideDropdown() {
-      const dropdownContainer = document.getElementById('chat-onboarding-dropdown');
-      if (dropdownContainer) {
-        dropdownContainer.style.display = 'none';
+    function hidePills() {
+      const pills = document.getElementById('chat-onboarding-pills');
+      if (pills) {
+        pills.style.display = 'none';
       }
     }
 
-    // ─── Dropdown Role Selection ───
-    function selectRole(selectElement) {
-      const category = selectElement.value;
-      if (!category) return;
-
-      let message = "";
-      let agentLabel = "";
-
-      if (category === "grower") {
-        message = "i am a grower";
-        agentLabel = "🌱 Grower Advisor";
-      } else if (category === "investor") {
-        message = "i am an investor";
-        agentLabel = "💰 Investor Advisor";
-      } else if (category === "corporate") {
-        message = "corporate partnership";
-        agentLabel = "🏢 Business Advisor";
-      } else if (category === "exploring") {
-        message = "just exploring";
-        agentLabel = "🔍 Explorer Guide";
-      }
-
+    // ─── Pill button click ───
+    function clickPill(category, message, agentLabel) {
       currentAgent = category;
-      hideDropdown();
+      hidePills();
       appendUserBubble(agentLabel);
       sendToAPI(message);
     }
@@ -1186,7 +1150,7 @@
       input.value = '';
       input.style.height = '36px';
 
-      hideDropdown();
+      hidePills();
       appendUserBubble(text);
       sendToAPI(text);
     }
@@ -1436,11 +1400,11 @@
 
         appendBotBubble(data.reply, currentAgent, data.step, data.interactive_actions);
 
-        // Control onboarding dropdown dynamically based on step
+        // Control onboarding pills dynamically based on step
         if (data.step === 'start') {
-          showDropdown();
+          showPills();
         } else {
-          hideDropdown();
+          hidePills();
         }
 
         if (data.step === 'ended') {
@@ -1560,9 +1524,9 @@
       }
     });
 
-    // Show initial dropdown and check scroll on load
+    // Show initial pills and check scroll on load
     window.addEventListener('load', () => {
-      showDropdown();
+      showPills();
       scrollToBottom();
     });
   </script>

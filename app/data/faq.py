@@ -220,17 +220,17 @@ FAQ = [
     {
         "category": "exploring",
         "question": "Where is Varsapradaya located?",
-        "answer": "Varsapradaya is headquartered in Mysore, India. Our Innovation Center there serves as our hub for R&D in IoT and AI, located close to major coffee and spice regions with access to great engineering talent."
+        "answer": "Varsapradaya's Innovation Center is in Mysore, India — our R&D hub for IoT and AI, located close to major coffee and spice growing regions. The company is registered as Varsapradaya Private Limited at Unit No 6134, Windmills of Your Mind, 331 Road No 5B, EPIP, Bengaluru, Karnataka, 560066, India."
     },
     {
         "category": "exploring",
         "question": "Where is Varsapradaya situated or based?",
-        "answer": "Varsapradaya is based in Mysore, India. Our Innovation Center in Mysore is our R&D hub for IoT and AI development, perfectly positioned near major coffee and spice growing regions."
+        "answer": "Varsapradaya is based in India with its Innovation Center in Mysore (R&D hub for IoT and AI) and its registered office in Bengaluru, Karnataka. The company was incorporated in November 2024 as Varsapradaya Private Limited."
     },
     {
         "category": "exploring",
         "question": "What is Varsapradaya's office location or address?",
-        "answer": "Our Innovation Center is located in Mysore, India. It is our primary hub for research and development in IoT and AI technologies for the agritech sector."
+        "answer": "Registered Address: Unit No 6134, Windmills of Your Mind, 331 Road No 5B, EPIP, Bengaluru, Karnataka, 560066, India. Innovation Center: Mysore, India (R&D hub near major coffee and spice regions)."
     },
     {
         "category": "exploring",
@@ -727,8 +727,8 @@ FAQ = [
     },
     {
         "category": "grower",
-        "question": "What happens if a sensor stops working?",
-        "answer": "The system can detect device issues, and support teams can help troubleshoot, repair, or replace the device if needed."
+        "question": "What happens if a sensor stops working or gives unusual readings?",
+        "answer": "The system detects device issues automatically and alerts both you and the support team. Remote diagnostics can resolve most problems. If needed, our field team will visit your estate for troubleshooting, calibration, repair, or replacement under the 12-month warranty."
     },
     {
         "category": "grower",
@@ -980,12 +980,12 @@ FAQ = [
     {
         "category": "exploring",
         "question": "What other devices do you have along with MicroClime? What are the different devices, sensors, or plans offered by Varsapradaya?",
-        "answer": "Varsapradaya offers four farm monitoring hardware packages: 1) FarmFuture MicroClime (weather monitoring), 2) FarmFuture SoilSync (soil intelligence), 3) FarmFuture RainSense (rainfall tracking), and 4) Yield Whisperer (all-in-one weather and soil monitoring)."
+        "answer": "Varsapradaya offers four farm monitoring hardware packages — all pay once, own forever: 1) FarmFuture Yield Whisperer (Rs 95,000) — the recommended all-in-one flagship combining 11-point soil monitoring and full micro-weather station, 2) FarmFuture MicroClime (Rs 65,000) — real-time weather and microclimate monitoring, 3) FarmFuture SoilSync (Rs 40,000) — deep continuous soil intelligence, and 4) FarmFuture RainSense (Rs 30,000) — entry-level rainfall tracking and irrigation planning. Each device covers 5 acres."
     },
     {
         "category": "exploring",
         "question": "What does 'Varsapradaya' mean?",
-        "answer": "The name is derived from Sanskrit, meaning 'one who gives rain' — fitting for a company helping coffee farmers manage water, weather, and soil conditions."
+        "answer": "The name Varsapradaya is derived from Sanskrit — 'Varsha' meaning rain and 'Pradaya' meaning giver, together meaning 'one who gives rain.' It is a fitting name for a company dedicated to helping coffee farmers manage water, weather, and soil conditions on their plantations."
     },
     {
         "category": "exploring",
@@ -1005,7 +1005,7 @@ FAQ = [
     {
         "category": "exploring",
         "question": "Who are the founders of Varsapradaya?",
-        "answer": "Founder details are not publicly listed on the official website. Contact info@varsapradaya.com or check LinkedIn for this information."
+        "answer": "Founder details are not listed on the public website. For information about the leadership team, please contact info@varsapradaya.com or visit the Varsapradaya LinkedIn page."
     },
     {
         "category": "exploring",
@@ -1057,7 +1057,7 @@ FAQ = [
     {
         "category": "exploring",
         "question": "Is there a free trial or demo available?",
-        "answer": "Not publicly specified. Register with a mobile number at farmfuture.io to explore the platform."
+        "answer": "Your first year of app access, dashboards, AI alerts, and software updates is included free with every hardware purchase. After the first year, the app service continues at Rs 850/month for up to 10 devices. You can also register with your mobile number at farmfuture.io to explore the platform."
     },
     {
         "category": "exploring",
@@ -1142,7 +1142,7 @@ FAQ = [
     {
         "category": "exploring",
         "question": "How can I contact Varsapradaya?",
-        "answer": "Email: info@varsapradaya.com | Phone (General): +91 70323 25050 | Phone (Support): +91 80086 44544 | Website: varsapradaya.com | Platform: farmfuture.io"
+        "answer": "Email: info@varsapradaya.com  |Phone: +91 70323 25050 | . Website: varsapradaya.com | Platform: farmfuture.io. Address: Unit No 6134, Windmills of Your Mind, 331 Road No 5B, EPIP, Bengaluru, Karnataka, 560066, India."
     },
     {
         "category": "exploring",
@@ -1304,5 +1304,341 @@ FAQ = [
         "category": "exploring",
         "question": "Can I monitor my estate remotely through the app?",
         "answer": "Yes. All four FarmFuture packages include mobile app-based estate monitoring, allowing you to track soil, weather, pest alerts, and farm activity from anywhere."
+    },
+
+    # =========================================================================
+    # PRODUCT COMPARISON & SELECTION FAQs
+    # =========================================================================
+    {
+        "category": "exploring",
+        "question": "What is the difference between Yield Whisperer and SoilSync?",
+        "answer": "Yield Whisperer (Rs 95,000) is the all-in-one flagship — it includes everything SoilSync offers (11-point soil monitoring) PLUS a full micro-weather station (temperature, humidity, wind, rainfall, leaf wetness, air pressure). SoilSync (Rs 40,000) focuses only on soil intelligence. Choose Yield Whisperer if you want complete soil + weather coverage in one device. Choose SoilSync if you already have weather data and only need soil monitoring."
+    },
+    {
+        "category": "exploring",
+        "question": "What is the difference between MicroClime and RainSense?",
+        "answer": "MicroClime (Rs 65,000) is a full micro-weather station monitoring 7 weather variables — temperature, humidity, wind speed, wind direction, rainfall, leaf wetness, and air pressure. RainSense (Rs 30,000) is the entry-level option focused on rainfall tracking, soil moisture at 20cm root zone depth, and includes Cherry Check for AI-based crop yield estimation. Choose MicroClime for comprehensive weather intelligence. Choose RainSense for affordable rainfall and irrigation planning."
+    },
+    {
+        "category": "exploring",
+        "question": "Which device should I buy for my coffee estate?",
+        "answer": "It depends on your needs: Yield Whisperer (Rs 95,000) for complete soil + weather monitoring in one device (recommended). SoilSync (Rs 40,000) if you only need soil health data. MicroClime (Rs 65,000) if weather and pest prediction is your priority. RainSense (Rs 30,000) if you want to start with basic rainfall tracking and irrigation planning. All devices cover 5 acres and include free installation."
+    },
+    {
+        "category": "exploring",
+        "question": "I only need weather data — which device is right for me?",
+        "answer": "FarmFuture MicroClime (Rs 65,000) is designed specifically for weather-focused monitoring. It tracks 7 real-time weather variables — temperature, humidity, wind speed, wind direction, rainfall, leaf wetness, and air pressure — and includes pest and disease risk alerts based on microclimate conditions."
+    },
+    {
+        "category": "exploring",
+        "question": "Can I combine SoilSync and MicroClime instead of buying Yield Whisperer?",
+        "answer": "Yes, you could deploy SoilSync (Rs 40,000) and MicroClime (Rs 65,000) together for Rs 1,05,000, giving you both soil intelligence and full weather monitoring. However, the Yield Whisperer (Rs 95,000) combines both capabilities in a single device for Rs 10,000 less, with the added benefit of 3 scheduled soil nutrient assessments (vs 1 with SoilSync). Yield Whisperer is the recommended option for complete coverage."
+    },
+    {
+        "category": "exploring",
+        "question": "Which device is best for a small estate under 5 acres?",
+        "answer": "For a small estate under 5 acres, one device is all you need since each device covers up to 5 acres. If budget is a priority, start with RainSense (Rs 30,000) for rainfall and irrigation planning. For complete monitoring, Yield Whisperer (Rs 95,000) gives you everything in one device — soil, weather, pest alerts, and Cherry Check."
+    },
+    {
+        "category": "exploring",
+        "question": "Which device is best for large estates over 50 acres?",
+        "answer": "For estates over 50 acres, you will need multiple devices since each covers 5 acres. We recommend the Yield Whisperer for comprehensive monitoring of critical blocks, with RainSense or SoilSync deployed in supporting zones. On estates with distinct micro-climate zones (valleys, ridges), one device per micro-zone is recommended. Contact us at info@varsapradaya.com for a customized deployment plan."
+    },
+    {
+        "category": "exploring",
+        "question": "I already have weather monitoring — do I still need MicroClime?",
+        "answer": "If you already have weather data, SoilSync (Rs 40,000) is the right choice — it gives you deep, continuous soil intelligence without duplicating weather monitoring. SoilSync tracks soil moisture, NPK, pH, temperature, humidity, and EC across 11 points and includes 1 scheduled soil nutrient assessment."
+    },
+    {
+        "category": "exploring",
+        "question": "What is the most affordable option to get started with Varsapradaya?",
+        "answer": "FarmFuture RainSense at Rs 30,000 is the most affordable entry point. It includes rainfall tracking, soil moisture at 20cm depth, Cherry Check for AI yield estimation, farm boundary mapping, pest and disease alerts, and full mobile app access. Installation is included free, and the first year of app access is also free."
+    },
+    {
+        "category": "exploring",
+        "question": "Can I start with one device and add more later?",
+        "answer": "Yes. You can start with any single device and expand later as you see value. You can even mix different device types — for example, start with RainSense on one block and later add a Yield Whisperer on another. Up to 10 devices can be managed under a single account at Rs 850/month after the first year."
+    },
+
+    # =========================================================================
+    # CATEGORY-SPECIFIC DEVICE FAQs — GROWER
+    # =========================================================================
+    {
+        "category": "grower",
+        "question": "What devices does Varsapradaya offer for my farm?",
+        "answer": "We offer four devices — all pay once, own forever: Yield Whisperer (Rs 95,000, recommended) for complete soil + weather monitoring. MicroClime (Rs 65,000) for weather and pest alerts. SoilSync (Rs 40,000) for soil health intelligence. RainSense (Rs 30,000) for rainfall tracking and irrigation planning. Each covers 5 acres. Installation is free with every purchase."
+    },
+    {
+        "category": "grower",
+        "question": "How much does the Yield Whisperer cost and what do I get?",
+        "answer": "The Yield Whisperer costs Rs 95,000 — pay once, own forever. You get 11-point soil monitoring (moisture, NPK, pH, temperature, humidity, EC), a full micro-weather station (temperature, humidity, wind, rainfall, leaf wetness, air pressure), pest and disease alerts, mobile app monitoring, and payments management. Free extras include device and weather station installation plus 3 scheduled soil nutrient assessments across 10 transect points."
+    },
+    {
+        "category": "grower",
+        "question": "What does SoilSync measure on my land?",
+        "answer": "SoilSync (Rs 40,000) continuously monitors your soil across 11 points — Soil Moisture, Nitrogen (N), Phosphorus (P), Potassium (K), pH, Electrical Conductivity (EC), Soil Temperature, and Soil Humidity. It also provides pest and disease monitoring, mobile app access, and includes 1 scheduled soil nutrient assessment across 10 transect points at no extra charge."
+    },
+    {
+        "category": "grower",
+        "question": "How does RainSense help me plan irrigation on my estate?",
+        "answer": "RainSense (Rs 30,000) tracks cumulative rainfall in millimeters with daily, weekly, monthly, and yearly trends. It also monitors soil moisture at 20cm root zone depth. By combining rainfall data with soil moisture readings, you can see exactly when irrigation is needed and when it is not — helping you avoid water waste and plan efficiently."
+    },
+    {
+        "category": "grower",
+        "question": "What is Cherry Check and how do I use it on my estate?",
+        "answer": "Cherry Check is an AI-powered crop yield estimation feature available with the RainSense package. Using the FarmFuture app camera, you scan flowers and developing fruit clusters on your coffee plants. The AI counts buds and fruit bodies, correlates density with local weather and historical data, and gives you an estimated harvest yield range. This helps you plan harvest labor, storage, and buyer negotiations weeks in advance."
+    },
+    {
+        "category": "grower",
+        "question": "Will one device be enough for my entire estate?",
+        "answer": "Each device covers up to 5 acres. So for a 5-acre estate, one device is enough. For larger estates, you will need one device per 5 acres. On estates with sloped terrain or distinct micro-climate zones (such as a valley and a ridge), we recommend one device per micro-zone for better accuracy."
+    },
+
+    # =========================================================================
+    # CATEGORY-SPECIFIC DEVICE FAQs — CORPORATE
+    # =========================================================================
+    {
+        "category": "corporate",
+        "question": "What hardware packages can we offer to plantation clients?",
+        "answer": "Varsapradaya offers four hardware packages for deployment: Yield Whisperer (Rs 95,000) — all-in-one soil + weather, recommended for flagship clients. MicroClime (Rs 65,000) — full weather station for climate-sensitive estates. SoilSync (Rs 40,000) — deep soil intelligence for nutrient-focused operations. RainSense (Rs 30,000) — entry-level rainfall and irrigation tool. All are pay-once-own-forever with free installation. Mixed deployments across estates are fully supported."
+    },
+    {
+        "category": "corporate",
+        "question": "Can we deploy different device types across different estates or blocks?",
+        "answer": "Yes. Mixed deployments are fully supported. You can deploy Yield Whisperer on high-priority blocks, SoilSync in areas needing soil focus, MicroClime where weather risk is the primary concern, and RainSense as entry-level coverage. All devices integrate into the same FarmFuture dashboard and Partner Portal for centralized monitoring."
+    },
+
+    # =========================================================================
+    # CATEGORY-SPECIFIC DEVICE FAQs — INVESTOR
+    # =========================================================================
+    {
+        "category": "investor",
+        "question": "What is Varsapradaya's product portfolio and pricing structure?",
+        "answer": "Varsapradaya offers four hardware products at different price points — Yield Whisperer (Rs 95,000), MicroClime (Rs 65,000), SoilSync (Rs 40,000), and RainSense (Rs 30,000). All are one-time hardware purchases. The recurring revenue comes from the SaaS subscription at Rs 850/month per account (up to 10 devices) after the first free year. This hybrid Capex + Opex model creates high-margin hardware revenue paired with sticky recurring SaaS income."
+    },
+    {
+        "category": "investor",
+        "question": "What is the hardware gross margin potential across the product line?",
+        "answer": "The product line spans from Rs 30,000 (RainSense) to Rs 95,000 (Yield Whisperer), allowing Varsapradaya to address different market segments. The hybrid model — high-margin hardware sales (Capex) paired with high-retention SaaS (Rs 850/month Opex) — creates multiple revenue layers. The SaaS component has high margins and strong retention since once hardware is deployed, the software becomes essential to daily farm operations."
+    },
+
+    # =========================================================================
+    # PRICING & SUBSCRIPTION EDGE CASE FAQs
+    # =========================================================================
+    {
+        "category": "exploring",
+        "question": "What happens if I don't pay the Rs 850 per month after the first year?",
+        "answer": "The first year of app access is included free with your hardware purchase. After the first year, the app service fee of Rs 850/month provides continued access to dashboards, AI alerts, analytics, and software updates. If you choose not to continue the subscription, you would lose access to the software features, but your hardware remains yours as it is a one-time purchase."
+    },
+    {
+        "category": "exploring",
+        "question": "Is there a discount for buying multiple devices?",
+        "answer": "For bulk orders or multi-estate deployments, please contact our team at info@varsapradaya.com or call +91 70323 25050. We can provide customized pricing based on your deployment size and requirements."
+    },
+    {
+        "category": "exploring",
+        "question": "Are there EMI or installment payment options available?",
+        "answer": "For information about EMI or installment payment options, please contact our team at info@varsapradaya.com or call +91 70323 25050. We can discuss payment arrangements that work for your situation."
+    },
+    {
+        "category": "exploring",
+        "question": "Can I get a refund on my device or subscription?",
+        "answer": "As per our Terms of Service, subscription fees are non-refundable. This includes partial subscription periods, unused services, device downtime or connectivity issues, and early termination. Refund exceptions may apply only if required by law or expressly agreed in writing. For any concerns, contact info@varsapradaya.com."
+    },
+    {
+        "category": "exploring",
+        "question": "Is the Rs 850 per month subscription charged per device or per account?",
+        "answer": "The Rs 850/month app service fee (applicable after the first free year) is per account, not per device. A single account can manage up to 10 devices under this fee, making it very cost-effective for estates with multiple sensors."
+    },
+    {
+        "category": "exploring",
+        "question": "What is the total cost of ownership for the first year?",
+        "answer": "In the first year, you only pay the hardware cost — the app service is completely free. For example: RainSense costs Rs 30,000 total in year one. SoilSync costs Rs 40,000. MicroClime costs Rs 65,000. Yield Whisperer costs Rs 95,000. Installation is included free. From year two onwards, the app service is Rs 850/month (Rs 10,200/year) for up to 10 devices."
+    },
+    {
+        "category": "exploring",
+        "question": "How many soil nutrient assessments are included with each package?",
+        "answer": "The number of included soil nutrient assessments varies by package: Yield Whisperer includes 3 scheduled assessments across 10 transect points. SoilSync includes 1 scheduled assessment across 10 transect points. MicroClime and RainSense do not include soil nutrient assessments as they focus on weather and rainfall data respectively."
+    },
+    {
+        "category": "exploring",
+        "question": "What is included free with every FarmFuture hardware purchase?",
+        "answer": "Every FarmFuture hardware purchase includes: free device installation on your estate, free first year of app access (dashboards, AI alerts, analytics, software updates), and free mobile app monitoring. Additionally, Yield Whisperer includes weather station installation + 3 soil assessments, and SoilSync includes 1 soil assessment — all at no extra charge."
+    },
+
+    # =========================================================================
+    # TECHNICAL & OPERATIONAL FAQs
+    # =========================================================================
+    {
+        "category": "exploring",
+        "question": "How does the FarmFuture device connect to the internet or send data?",
+        "answer": "FarmFuture devices use LoRaWAN mesh networking as the primary connectivity — these are plantation-ready radio signals specially designed to pass through thick canopy where GPS or Wi-Fi usually fails. The system also supports NB-IoT and GPRS/4G/5G depending on estate conditions and deployment requirements."
+    },
+    {
+        "category": "exploring",
+        "question": "What is LoRaWAN and why does Varsapradaya use it?",
+        "answer": "LoRaWAN (Long Range Wide Area Network) is a wireless communication protocol designed for long-range, low-power IoT devices. Varsapradaya uses it because it can transmit data through thick tree canopies, across hilly terrain, and over long distances — environments where standard Wi-Fi, GPS, and mobile signals often fail. It allows massive sensor density without requiring expensive infrastructure."
+    },
+    {
+        "category": "exploring",
+        "question": "How often does the sensor data update or refresh?",
+        "answer": "Data update frequency depends on the device and deployment setup. Sensors continuously collect data and transmit it at regular intervals. Basic alerts can begin immediately after installation, and you can view both current readings and historical trends through the FarmFuture app and dashboard."
+    },
+    {
+        "category": "exploring",
+        "question": "What is the battery life of the FarmFuture sensors?",
+        "answer": "FarmFuture devices are solar-powered with integrated solar panels and rechargeable batteries, making them self-sustaining for remote, off-grid coffee estate locations. The solar panels are designed for low-light canopy environments, so they charge even under shade trees. The devices are built to last 5 to 7 years."
+    },
+    {
+        "category": "exploring",
+        "question": "Is the device solar-powered and does it work under shade canopy?",
+        "answer": "Yes. Every FarmFuture field device includes an integrated solar panel with rechargeable batteries. The solar panels are specifically designed for low-light canopy environments, so they charge effectively even under dense shade trees typical of coffee plantations. No external power source or wiring is needed."
+    },
+    {
+        "category": "exploring",
+        "question": "How long does device installation take?",
+        "answer": "Installation time depends on estate size and terrain. The process includes digital mapping of your land, sensor placement based on topography and canopy analysis, physical installation, and app onboarding. Our field team handles the entire process. Installation is included free with every hardware purchase."
+    },
+    {
+        "category": "exploring",
+        "question": "Do I need to maintain the FarmFuture device myself?",
+        "answer": "The devices are designed to be low-maintenance. They are solar-powered, IP67 waterproof, UV-resistant, and built for 5-7 years of outdoor use. The system monitors device health automatically and alerts our support team if any issues arise. For calibration or servicing, our field team can assist."
+    },
+    {
+        "category": "exploring",
+        "question": "Can I relocate the device to a different spot on my estate?",
+        "answer": "While the devices can be physically moved, optimal placement is based on our digital mapping of your land's topography and canopy. Relocating a device may affect data accuracy. We recommend contacting our support team before moving a device so we can advise on the best new placement."
+    },
+    {
+        "category": "exploring",
+        "question": "What is the warranty period for FarmFuture devices?",
+        "answer": "All FarmFuture devices come with a 12-month no-hassle replacement warranty. If a device fails during the warranty period, we will repair or replace it. Our support team also provides a troubleshooting kit for quick on-site fixes by your technical team or our field engineers."
+    },
+    {
+        "category": "exploring",
+        "question": "What is IP67 waterproofing and why does it matter for farm sensors?",
+        "answer": "IP67 is an international protection rating meaning the device is completely dust-tight (6) and can withstand submersion in water up to 1 meter for 30 minutes (7). This matters because coffee plantations experience heavy monsoon rainfall, high humidity, and waterlogging. IP67 ensures your FarmFuture sensors keep working reliably through the worst weather conditions."
+    },
+
+    # =========================================================================
+    # COMPANY & LEGAL FAQs
+    # =========================================================================
+    {
+        "category": "exploring",
+        "question": "What is Varsapradaya's registered address?",
+        "answer": "Varsapradaya Private Limited is registered at Unit No 6134, Windmills of Your Mind, 331 Road No 5B, EPIP, Bengaluru, Karnataka, 560066, India. The company's Innovation Center for R&D in IoT and AI is located in Mysore, India."
+    },
+    {
+        "category": "exploring",
+        "question": "When was Varsapradaya incorporated?",
+        "answer": "Varsapradaya Private Limited was incorporated in November 2024. The company is registered in Bengaluru, Karnataka, India, with its Innovation Center in Mysore."
+    },
+    {
+        "category": "exploring",
+        "question": "What is AgriCentral BO?",
+        "answer": "AgriCentral BO is Varsapradaya's enterprise back-office companion app. It is used by technicians, warehouse teams, and administrative staff for IoT device deployment, inventory management, service operations, and real-time workflow visibility. It is available on the App Store (iOS)."
+    },
+    {
+        "category": "exploring",
+        "question": "Is the FarmFuture app available on Google Play Store?",
+        "answer": "Yes. The FarmFuture mobile app is available on the Google Play Store for Android devices. It supports OTP-based registration using your mobile number and includes on-device AI features for personalized farming insights."
+    },
+    {
+        "category": "exploring",
+        "question": "Is the subscription refundable if I cancel?",
+        "answer": "As per the Terms of Service, subscription fees are non-refundable. This applies to partial subscription periods, unused services, and early termination. Refund exceptions may apply only as required by law or as expressly agreed in writing with Varsapradaya."
+    },
+    {
+        "category": "exploring",
+        "question": "What happens to my data if my account is terminated or I stop using the service?",
+        "answer": "Upon account termination, user content may be permanently deleted as per the Terms of Service. We recommend exporting any important data before ending your subscription. Data access, retention, and export should follow the terms of your service agreement. Contact info@varsapradaya.com for data-related queries."
+    },
+    {
+        "category": "exploring",
+        "question": "Can Varsapradaya change the subscription fee?",
+        "answer": "Yes. Varsapradaya may update subscription fees with a 7-day notice posted on the application. Changes become effective after the notice period. The current app service fee is Rs 850/month for up to 10 devices, applicable after the first free year."
+    },
+    {
+        "category": "exploring",
+        "question": "Can I book on-site soil testing or pest analysis through the app?",
+        "answer": "Yes. The FarmFuture platform includes an Instant Tests feature that allows you to book appointments for on-site soil testing, leaf health analysis, and pest inspection. Our field technicians visit your estate, collect samples, and provide lab-grade results to calibrate your sensors and support better farm decisions."
+    },
+
+    # =========================================================================
+    # ADDITIONAL CONTACT FAQs
+    # =========================================================================
+    {
+        "category": "exploring",
+        "question": "What is the app support email for FarmFuture?",
+        "answer": "For FarmFuture app support, email admin@varsapradaya.com. For general inquiries, email info@varsapradaya.com. For compliance-related queries, email compliance@varsapradaya.com."
+    },
+    {
+        "category": "exploring",
+        "question": "What is the compliance email for Varsapradaya?",
+        "answer": "For compliance-related queries, contact compliance@varsapradaya.com. For general inquiries, email info@varsapradaya.com or call +91 70323 25050."
+    },
+    {
+        "category": "exploring",
+        "question": "What are all the phone numbers to reach Varsapradaya?",
+        "answer": "You can reach Varsapradaya at three phone numbers: +91 70323 25050 (General), +91 70323 21414, and +91 80086 44544 (Support). Email contacts include info@varsapradaya.com (General), admin@varsapradaya.com (App Support), and compliance@varsapradaya.com (Compliance)."
+    },
+
+    # =========================================================================
+    # COFFEE EDUCATION FAQs
+    # =========================================================================
+    {
+        "category": "exploring",
+        "question": "Does Varsapradaya provide coffee cultivation guides or educational content?",
+        "answer": "Yes. The Bean Basics section on varsapradaya.com is an educational resource hub for coffee cultivation. It includes detailed seasonal farming guides, a month-by-month coffee calendar covering activities from harvest to planting, regional growing statistics, and information about Arabica and Robusta varieties."
+    },
+    {
+        "category": "exploring",
+        "question": "What is the coffee calendar and how does it help me plan my farming activities?",
+        "answer": "The coffee calendar is a month-by-month guide to key farming activities on your estate. For example, January covers dadap lopping, supply planting, staking, mulching, weeding, de-suckering, drain clearing, shade tree planting, pest control, and pre-monsoon Bordeaux spraying. It helps you plan your estate work throughout the year based on proven agronomic practices."
+    },
+    {
+        "category": "grower",
+        "question": "Does Varsapradaya track common coffee pests like berry borer, mealy bugs, or leaf rust?",
+        "answer": "Yes. Our MicroClime and Yield Whisperer sensors detect the exact humidity, temperature, and leaf wetness conditions under which common pests and fungal diseases thrive — including berry borer, mealy bugs, white stem borer, and leaf rust. The app sends preventative alerts before a physical outbreak occurs, giving you a spraying window recommendation in advance."
+    },
+    {
+        "category": "grower",
+        "question": "What farming activities should I focus on in January on my coffee estate?",
+        "answer": "January activities include dadap lopping, supply planting, staking and mulching, weeding, de-suckering, clearing drains, renovation of cradle pits, planting shade trees, nursery thinning, pest control, light trap installation, pre-monsoon Bordeaux spraying (0.5%), and liming for soil pH correction. The FarmFuture app's coffee calendar can help you plan and track these activities."
+    },
+
+    # =========================================================================
+    # ADDITIONAL GROWER-SPECIFIC FAQs (fine-tuned for persona)
+    # =========================================================================
+    {
+        "category": "grower",
+        "question": "Tell me about the devices or products Varsapradaya offers",
+        "answer": "We offer four FarmFuture devices for your estate: 1) Yield Whisperer (Rs 95,000) — our recommended all-in-one with soil + weather monitoring, 3 free soil assessments. 2) MicroClime (Rs 65,000) — full weather station with pest and disease alerts. 3) SoilSync (Rs 40,000) — deep soil intelligence with 1 free soil assessment. 4) RainSense (Rs 30,000) — affordable rainfall tracking with Cherry Check for yield estimation. All include free installation, 5-acre coverage, and first year of app access free."
+    },
+    {
+        "category": "grower",
+        "question": "How much do the devices cost and which one should I pick?",
+        "answer": "Prices: Yield Whisperer Rs 95,000 (recommended, soil + weather), MicroClime Rs 65,000 (weather focus), SoilSync Rs 40,000 (soil focus), RainSense Rs 30,000 (rainfall + irrigation). All are pay once, own forever. If you want complete monitoring, go with Yield Whisperer. If budget matters, start with RainSense and upgrade later. Every device covers 5 acres, includes free installation, and your first year of app access is free."
+    },
+    {
+        "category": "grower",
+        "question": "What is MicroClime and how will it help my estate?",
+        "answer": "MicroClime (Rs 65,000) is FarmFuture's weather monitoring device. It tracks 7 real-time weather variables on your estate — temperature, humidity, wind speed, wind direction, rainfall, leaf wetness, and air pressure. By combining these readings, it predicts when pest and disease conditions are likely to develop and sends you alerts before an outbreak occurs, giving you time to spray preventatively."
+    },
+    {
+        "category": "grower",
+        "question": "What is SoilSync and how will it help my soil health?",
+        "answer": "SoilSync (Rs 40,000) is FarmFuture's soil intelligence device. It continuously monitors your soil across 11 points — moisture, nitrogen (N), phosphorus (P), potassium (K), pH, electrical conductivity (EC), soil temperature, and soil humidity. This helps you apply fertilizer only when the soil is ready to absorb it, saving up to 20% on fertilizer costs. Includes 1 free soil nutrient assessment across 10 transect points."
+    },
+    {
+        "category": "grower",
+        "question": "What is RainSense and how will it help with my irrigation?",
+        "answer": "RainSense (Rs 30,000) is FarmFuture's entry-level device focused on rainfall and irrigation. It tracks cumulative rainfall data with daily, weekly, monthly, and yearly trends, plus soil moisture at 20cm root zone depth. It also includes Cherry Check (AI crop yield estimation), farm boundary mapping, and pest and disease alerts. It is the most affordable way to start with precision farming."
+    },
+    {
+        "category": "grower",
+        "question": "What is Yield Whisperer and why is it recommended?",
+        "answer": "Yield Whisperer (Rs 95,000) is FarmFuture's flagship all-in-one device — the most complete monitoring solution. It combines 11-point soil monitoring (moisture, NPK, pH, EC, temperature, humidity) with a full micro-weather station (temperature, humidity, wind, rainfall, leaf wetness, air pressure). It includes pest and disease alerts, 3 free soil nutrient assessments, weather station installation, and the FarmFuture app. It is recommended because it gives you everything in one device."
     }
 ]
+
