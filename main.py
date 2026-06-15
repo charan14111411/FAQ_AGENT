@@ -14,6 +14,7 @@ from app.logger import get_logger
 from app.db import engine
 from app.routes import chat, health, prospect
 from app.agents.graph import faq_graph_builder
+from app.middleware.rate_limiter import RateLimitMiddleware
 
 logger = get_logger()
 
@@ -122,6 +123,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Protect the LLM Chat API: Limit to 10 requests per minute per IP
+app.add_middleware(RateLimitMiddleware, requests_limit=10, window_seconds=60)
 
 app.include_router(chat.router,   prefix="/api", tags=["Chat"])
 app.include_router(health.router, prefix="/api", tags=["Health"])

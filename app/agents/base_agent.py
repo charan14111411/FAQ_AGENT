@@ -1,4 +1,6 @@
 import os
+from typing import Optional, Type
+from pydantic import BaseModel
 from app.config import settings
 from groq import AsyncGroq
 from openai import AsyncOpenAI
@@ -8,15 +10,21 @@ _openai_client = None
 _gemini_client = None
 
 
-async def _call_llm(messages: list, max_tokens: int, temperature: float) -> dict:
+async def _call_llm(
+    messages: list,
+    max_tokens: int,
+    temperature: float,
+    response_schema: Optional[Type[BaseModel]] = None,
+) -> dict:
     """
     Unified LLM caller. Supports Groq, OpenAI, and Gemini providers.
     Configured via LLM_PROVIDER in .env.
-    Returns: { reply, input_tokens, output_tokens, model }
+    Returns: { reply, input_tokens, output_tokens, model, parsed }
     On error: returns a safe fallback dict instead of raising.
     """
     global _groq_client, _openai_client, _gemini_client
     provider = settings.LLM_PROVIDER.lower()
+    parsed = None
 
     try:
         if provider == "groq":
@@ -24,28 +32,74 @@ async def _call_llm(messages: list, max_tokens: int, temperature: float) -> dict
                 _groq_client = AsyncGroq(api_key=settings.GROQ_API_KEY)
             client = _groq_client
             model = "llama-3.3-70b-versatile"
+            
+            # Groq structured output via JSON mode and prompt-guided schemas
+            response_format = None
+            if response_schema is not None:
+                response_format = {"type": "json_object"}
+                schema_instructions = (
+                    f"\nYou MUST respond with a JSON object conforming strictly to this JSON schema:\n"
+                    f"{response_schema.model_json_schema()}"
+                )
+                # Append schema instructions to the system prompt or user message
+                inserted_instructions = False
+                for msg in reversed(messages):
+                    if msg.get("role") == "system":
+                        msg["content"] += schema_instructions
+                        inserted_instructions = True
+                        break
+                if not inserted_instructions:
+                    messages.insert(0, {"role": "system", "content": schema_instructions})
+
             response = await client.chat.completions.create(
                 model=model,
                 messages=messages,
                 max_tokens=max_tokens,
                 temperature=temperature,
+                response_format=response_format,
             )
             reply = response.choices[0].message.content
             input_tokens = response.usage.prompt_tokens
             output_tokens = response.usage.completion_tokens
+
+            if response_schema is not None and reply:
+                try:
+                    clean_reply = reply.strip()
+                    if clean_reply.startswith("```json"):
+                        clean_reply = clean_reply[7:]
+                    if clean_reply.endswith("```"):
+                        clean_reply = clean_reply[:-3]
+                    clean_reply = clean_reply.strip()
+                    parsed = response_schema.model_validate_json(clean_reply)
+                except Exception as parse_err:
+                    from app.logger import get_logger
+                    get_logger().error(f"Failed to parse Groq response as JSON schema: {parse_err}. Raw: {reply}")
 
         elif provider == "openai":
             if _openai_client is None:
                 _openai_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
             client = _openai_client
             model = "gpt-4o-mini"
-            response = await client.chat.completions.create(
-                model=model,
-                messages=messages,
-                max_tokens=max_tokens,
-                temperature=temperature,
-            )
-            reply = response.choices[0].message.content
+
+            if response_schema is not None:
+                response = await client.beta.chat.completions.parse(
+                    model=model,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    response_format=response_schema,
+                )
+                reply = response.choices[0].message.content
+                parsed = response.choices[0].message.parsed
+            else:
+                response = await client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                )
+                reply = response.choices[0].message.content
+
             input_tokens = response.usage.prompt_tokens
             output_tokens = response.usage.completion_tokens
 
@@ -103,9 +157,13 @@ async def _call_llm(messages: list, max_tokens: int, temperature: float) -> dict
                 thinking_config=types.ThinkingConfig(thinking_budget=0),
             )
 
+            if response_schema is not None:
+                config.response_mime_type = "application/json"
+                config.response_schema = response_schema
+
             import asyncio
-            max_retries = 3
-            retry_delay = 1.0
+            max_retries = 5
+            retry_delay = 2.0
             response = None
             for attempt in range(max_retries):
                 try:
@@ -129,6 +187,19 @@ async def _call_llm(messages: list, max_tokens: int, temperature: float) -> dict
             input_tokens = (response.usage_metadata.prompt_token_count or 0) if response.usage_metadata else 0
             output_tokens = (response.usage_metadata.candidates_token_count or 0) if response.usage_metadata else 0
 
+            if response_schema is not None and reply:
+                try:
+                    clean_reply = reply.strip()
+                    if clean_reply.startswith("```json"):
+                        clean_reply = clean_reply[7:]
+                    if clean_reply.endswith("```"):
+                        clean_reply = clean_reply[:-3]
+                    clean_reply = clean_reply.strip()
+                    parsed = response_schema.model_validate_json(clean_reply)
+                except Exception as parse_err:
+                    from app.logger import get_logger
+                    get_logger().error(f"Failed to parse Gemini response as JSON schema: {parse_err}. Raw: {reply}")
+
         else:
             raise ValueError(f"Unsupported LLM_PROVIDER: '{settings.LLM_PROVIDER}'. Use 'groq', 'openai', or 'gemini'.")
 
@@ -138,6 +209,8 @@ async def _call_llm(messages: list, max_tokens: int, temperature: float) -> dict
         print(f"    Prompt: '{messages[-1]['content'] if messages else 'N/A'}'")
         print(f"    Response: '{reply}'")
         print(f"    Tokens: Input={input_tokens} | Output={output_tokens} | Total={input_tokens + output_tokens}")
+        if response_schema is not None:
+            print(f"    Parsed schema output: {parsed}")
         print(f"{'='*60}\n")
 
         return {
@@ -145,6 +218,7 @@ async def _call_llm(messages: list, max_tokens: int, temperature: float) -> dict
             "input_tokens":  input_tokens,
             "output_tokens": output_tokens,
             "model":         model,
+            "parsed":        parsed,
         }
 
     except Exception as e:
@@ -156,4 +230,5 @@ async def _call_llm(messages: list, max_tokens: int, temperature: float) -> dict
             "input_tokens":  0,
             "output_tokens": 0,
             "model":         "error_fallback",
+            "parsed":        None,
         }
