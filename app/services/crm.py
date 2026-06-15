@@ -214,11 +214,12 @@ Response: { "success": true, "data": { "message": "...", "prospectID": "363" } }
  
 import httpx
 from app.logger import get_logger
+from app.config import settings
  
 logger = get_logger()
  
 # --- ACTIVE BUSINESS CENTRAL CRM PROSPECT SERVICE ---
-CRM_PROSPECT_URL = "https://dev.businesscentral.in/rest/telecaller/backoffice/createProspect"
+CRM_PROSPECT_URL = settings.CRM_PROSPECT_URL
 CRM_SOURCE = "FAQ_Test_chat"
 CRM_TIMEOUT = 10.0  # seconds
  

@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     SESSION_TIMEOUT_MINUTES: int = 30
     QDRANT_URL: str = "http://localhost:6333"
     QDRANT_COLLECTION: str = "faq_embeddings"
+    CRM_PROSPECT_URL: str = "https://dev.businesscentral.in/rest/telecaller/backoffice/createProspect"
 
     class Config:
         env_file = ".env"
