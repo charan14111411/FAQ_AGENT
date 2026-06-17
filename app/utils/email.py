@@ -1,40 +1,85 @@
 import os
-import httpx
+import ssl
+import smtplib
 import asyncio
 import time
+import httpx
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.utils import formataddr
 from sqlalchemy import text
+from app.config import settings
 from app.db import AsyncSessionLocal, write_log
 from app.logger import get_logger
 
 logger = get_logger()
 
-EMAIL_API_URL = "https://api-mobile.farmfuture.io/api/email/send"
 
-async def call_email_api_with_retry(payload: dict, max_retries: int = 3, initial_delay: float = 1.0) -> dict:
+def _send_email_smtp_sync(to: str, subject: str, body: str, is_body_html: bool = True) -> None:
     """
-    Asynchronously POSTs to the email endpoint with retry logic and exponential backoff.
+    Synchronously sends a single email over SMTP (STARTTLS), authenticating as the
+    configured "info" mailbox. Mirrors the C# EmailService.SendEmailAsync implementation.
+
+    Runs in a worker thread (see send_email_smtp) so it never blocks the event loop.
+    """
+    host = settings.INFO_SMTP_HOST
+    port = settings.INFO_SMTP_PORT
+    user = settings.INFO_SMTP_USER
+    password = settings.INFO_SMTP_PASSWORD
+    # Authenticate as the info@ mailbox itself so the From address matches the
+    # authenticated account (avoids Exchange "SendAsDenied").
+    sender = settings.INFO_SMTP_FROM or user
+
+    if not (host and port and user and password and sender):
+        raise RuntimeError(
+            "SMTP is not fully configured. Set INFO_SMTP_HOST, INFO_SMTP_PORT, "
+            "INFO_SMTP_USER, INFO_SMTP_PASSWORD and INFO_SMTP_FROM."
+        )
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = sender
+    msg["To"] = to
+    subtype = "html" if is_body_html else "plain"
+    msg.attach(MIMEText(body, subtype, "utf-8"))
+
+    context = ssl.create_default_context()
+    with smtplib.SMTP(host, port, timeout=20) as client:
+        client.ehlo()
+        client.starttls(context=context)
+        client.ehlo()
+        client.login(user, password)
+        client.sendmail(sender, [to], msg.as_string())
+
+
+async def send_email_with_retry(
+    to: str,
+    subject: str,
+    body: str,
+    is_body_html: bool = True,
+    max_retries: int = 3,
+    initial_delay: float = 1.0,
+) -> dict:
+    """
+    Sends an email directly over SMTP with retry logic and exponential backoff.
+    Replaces the previous external api-mobile.farmfuture.io email endpoint call.
     """
     delay = initial_delay
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        for attempt in range(1, max_retries + 1):
-            try:
-                response = await client.post(EMAIL_API_URL, json=payload)
-                if response.status_code in [200, 201, 202, 204]:
-                    return {"status": "success", "attempts": attempt, "code": response.status_code}
-                
-                logger.warning(
-                    f"Email API returned status {response.status_code} (attempt {attempt}/{max_retries})"
-                )
-            except httpx.RequestError as exc:
-                logger.warning(
-                    f"Network error calling email API: {exc} (attempt {attempt}/{max_retries})"
-                )
-            
-            if attempt < max_retries:
-                sleep_time = delay * (2 ** (attempt - 1)) + (time.time() % 0.5)
-                await asyncio.sleep(sleep_time)
-                
-        raise RuntimeError(f"Failed to send email after {max_retries} attempts.")
+    for attempt in range(1, max_retries + 1):
+        try:
+            # Offload the blocking smtplib work to a worker thread.
+            await asyncio.to_thread(_send_email_smtp_sync, to, subject, body, is_body_html)
+            return {"status": "success", "attempts": attempt, "code": 250}
+        except Exception as exc:
+            logger.warning(
+                f"SMTP send error: {exc} (attempt {attempt}/{max_retries})"
+            )
+
+        if attempt < max_retries:
+            sleep_time = delay * (2 ** (attempt - 1)) + (time.time() % 0.5)
+            await asyncio.sleep(sleep_time)
+
+    raise RuntimeError(f"Failed to send email after {max_retries} attempts.")
 
 def get_html_thank_you_template(name: str) -> str:
     """
@@ -218,17 +263,14 @@ async def send_transcript_email(session_id: str, email: str, name: str, category
     try:
         # Generate the premium HTML thank-you content
         body_content = get_html_thank_you_template(name)
-        
-        # Formulate the external API payload
-        payload = {
-            "to": email,
-            "subject": f"Thank you for showing interest in Varsapradaya — {name}",
-            "body": body_content,
-            "isBodyHtml": True
-        }
-        
-        # Post with retries
-        api_result = await call_email_api_with_retry(payload)
+
+        # Send directly over SMTP with retries
+        api_result = await send_email_with_retry(
+            to=email,
+            subject=f"Thank you for showing interest in Varsapradaya — {name}",
+            body=body_content,
+            is_body_html=True,
+        )
         latency_ms = int((time.time() - start_time) * 1000)
         
         # Log audit in database
@@ -282,32 +324,87 @@ async def send_transcript_email(session_id: str, email: str, name: str, category
                 extra={"session_id": session_id, "user_id": user_id}
             )
 
-FOLLOWUP_API_URL = "https://api-mobile.farmfuture.io/api/User/SendPostChatFollowup"
+async def send_whatsapp_followup_with_retry(
+    mobile_number: str,
+    name: str,
+    max_retries: int = 3,
+    initial_delay: float = 1.0,
+) -> dict:
+    """
+    Sends the "post_chat_followup" WhatsApp template directly via the WhatsApp Cloud
+    (Facebook Graph) API, with retry logic and exponential backoff. Replaces the
+    previous external api-mobile.farmfuture.io/SendPostChatFollowup endpoint call.
 
-async def call_followup_api_with_retry(payload: dict, max_retries: int = 3, initial_delay: float = 1.0) -> dict:
+    Mirrors the C# SmsService.SendPostChatFollowupAsync implementation: the API number
+    is prefixed with the "91" country code and the body has a single text parameter (name).
     """
-    Asynchronously POSTs to the followup endpoint with retry logic and exponential backoff.
-    """
+    access_token = settings.WHATSAPP_ACCESS_TOKEN
+    phone_number_id = settings.WHATSAPP_PHONE_NUMBER_ID
+
+    if not (access_token and phone_number_id):
+        raise RuntimeError(
+            "WhatsApp is not configured. Set WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID."
+        )
+
+    url = (
+        f"https://graph.facebook.com/{settings.WHATSAPP_API_VERSION}"
+        f"/{phone_number_id}/messages"
+    )
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": "91" + mobile_number,
+        "type": "template",
+        "template": {
+            "name": settings.WHATSAPP_TEMPLATE_NAME,
+            "language": {"code": settings.WHATSAPP_TEMPLATE_LANG},
+            "components": [
+                {
+                    "type": "body",
+                    "parameters": [{"type": "text", "text": name}],
+                }
+            ],
+        },
+    }
+
     delay = initial_delay
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    # trust_env=True lets httpx honor HTTPS_PROXY / HTTP_PROXY / NO_PROXY env vars,
+    # so the dev server can reach external APIs through a corporate proxy when set.
+    async with httpx.AsyncClient(timeout=10.0, trust_env=True) as client:
         for attempt in range(1, max_retries + 1):
             try:
-                response = await client.post(FOLLOWUP_API_URL, json=payload)
+                response = await client.post(url, json=payload, headers=headers)
                 if response.status_code in [200, 201, 202, 204]:
-                    return {"status": "success", "attempts": attempt, "code": response.status_code}
-                
+                    message_id = ""
+                    try:
+                        message_id = (
+                            response.json().get("messages", [{}])[0].get("id", "")
+                        )
+                    except Exception:
+                        pass
+                    return {
+                        "status": "success",
+                        "attempts": attempt,
+                        "code": response.status_code,
+                        "message_id": message_id,
+                    }
+
                 logger.warning(
-                    f"Followup API returned status {response.status_code} (attempt {attempt}/{max_retries})"
+                    f"WhatsApp API returned status {response.status_code}: "
+                    f"{response.text[:200]} (attempt {attempt}/{max_retries})"
                 )
             except httpx.RequestError as exc:
                 logger.warning(
-                    f"Network error calling Followup API: {exc} (attempt {attempt}/{max_retries})"
+                    f"Network error calling WhatsApp API: {exc} (attempt {attempt}/{max_retries})"
                 )
-            
+
             if attempt < max_retries:
                 sleep_time = delay * (2 ** (attempt - 1)) + (time.time() % 0.5)
                 await asyncio.sleep(sleep_time)
-                
+
         raise RuntimeError(f"Failed to trigger followup after {max_retries} attempts.")
 
 async def trigger_post_chat_followup(phone: str, name: str, session_id: str = None):
@@ -347,13 +444,11 @@ async def trigger_post_chat_followup(phone: str, name: str, session_id: str = No
         extra={"session_id": session_id, "user_id": user_id}
     )
     try:
-        payload = {
-            "mobileNumber": formatted_phone,
-            "name": name
-        }
-        
-        api_result = await call_followup_api_with_retry(payload)
-        
+        api_result = await send_whatsapp_followup_with_retry(
+            mobile_number=formatted_phone,
+            name=name,
+        )
+
         # Log audit in database
         async with AsyncSessionLocal() as db:
             await write_log(

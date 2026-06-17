@@ -12,8 +12,13 @@ Log in to your production server terminal and install Python, PostgreSQL, and Do
 # 1. Update the server package repository
 sudo apt update && sudo apt upgrade -y
 
-# 2. Install Python 3.10+, pip, and virtual environment utilities
-sudo apt install python3 python3-pip python3-venv -y
+# 2. Install Python 3.10+ and virtual environment utilities
+sudo apt install python3 python3-venv -y
+
+# 2b. Install uv (fast Python package manager — replaces pip)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# Make uv available in the current shell (or re-login)
+source $HOME/.local/bin/env
 
 # 3. Install PostgreSQL database server (for transactional users/sessions data)
 sudo apt install postgresql postgresql-contrib -y
@@ -53,6 +58,7 @@ Copy your project code to the target directory on your server (e.g., `/var/www/f
 * `main.py`
 * `run_migrations.py`
 * `requirements.txt`
+* `requirements.lock` (pinned dependency versions for reproducible installs)
 * `.env`
 
 ### Exclude these (do not copy):
@@ -67,16 +73,19 @@ Copy your project code to the target directory on your server (e.g., `/var/www/f
 Navigate to the project directory on your server and initialize the Python environment:
 
 ```bash
-# 1. Create a clean virtual environment
-python3 -m venv venv
+# 1. Create a clean virtual environment with uv
+uv venv venv
 
 # 2. Activate the virtual environment
 source venv/bin/activate
 
-# 3. Upgrade pip and install all required libraries
-pip install -U pip
-pip install -r requirements.txt
+# 3. Install all required libraries from the pinned lockfile
+uv pip install -r requirements.lock
 ```
+
+> **Note:** Installs use `requirements.lock` (exact pinned versions) for
+> reproducible deployments. After changing `requirements.txt`, regenerate the
+> lock with: `uv pip compile requirements.txt --universal -o requirements.lock`
 
 ---
 

@@ -1,1072 +1,1187 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Varsapradaya — Precision Plantation Intelligence</title>
+    <meta
+      name="description"
+      content="Chat with Varsapradaya's AI advisor — get answers for growers, investors, corporate partners, and explorers."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,400;1,600&display=swap"
+      rel="stylesheet"
+    />
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Varsapradaya — Precision Plantation Intelligence</title>
-  <meta name="description"
-    content="Chat with Varsapradaya's AI advisor — get answers for growers, investors, corporate partners, and explorers." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,400;1,600&display=swap"
-    rel="stylesheet" />
-
-  <style>
-    /* ─── Design Tokens ─── */
-    :root {
-      --bg: #f7faf7;
-      --surface: #ffffff;
-      --border: rgba(0, 66, 37, 0.08);
-      --text: #003153;
-      --text-muted: #6e8c6e;
-      --primary-green: #004225;
-      --accent-green: #92bb37;
-      --radius: 12px;
-    }
-
-    *,
-    *::before,
-    *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: 'Inter', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 40px 20px;
-      overflow-y: auto;
-    }
-
-    /* ─── Main Section Layout ─── */
-    .conversation-container {
-      width: 100%;
-      max-width: 900px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
-
-    .conversation-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-      padding: 0 4px;
-    }
-
-    .conversation-header h2 {
-      font-size: clamp(24px, 4vw, 34px);
-      font-weight: 700;
-      color: var(--primary-green);
-      margin-bottom: 6px;
-      letter-spacing: -0.5px;
-    }
-
-    .conversation-header .subtitle {
-      font-family: 'Playfair Display', serif;
-      font-style: italic;
-      font-size: clamp(16px, 2.5vw, 22px);
-      color: #570000;
-      /* Red brand accent color */
-      margin: 0;
-    }
-
-    .conversation-header .chat-logo {
-      width: 54px;
-      height: 54px;
-      object-fit: contain;
-    }
-
-    /* ─── Chat Card ─── */
-    .chat-card {
-      background: var(--surface);
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      padding: 24px;
-      box-shadow: 0 10px 30px -10px rgba(0, 66, 37, 0.03);
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      width: 100%;
-    }
-
-    /* ─── Messages List ─── */
-    .chat-window {
-      max-height: 400px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      padding-right: 8px;
-      scroll-behavior: smooth;
-      scrollbar-width: thin;
-      scrollbar-color: var(--primary-green) rgba(0, 0, 0, 0.02);
-    }
-
-    .chat-window::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .chat-window::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.02);
-      border-radius: 3px;
-    }
-
-    .chat-window::-webkit-scrollbar-thumb {
-      background: var(--primary-green);
-      border-radius: 3px;
-    }
-
-    /* ─── Message Rows ─── */
-    .msg-row {
-      display: flex;
-      gap: 14px;
-      align-items: flex-start;
-      width: 100%;
-      animation: bubbleAppear 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-
-    @keyframes bubbleAppear {
-      from {
-        opacity: 0;
-        transform: translateY(8px);
+    <style>
+      /* ─── Design Tokens ─── */
+      :root {
+        --bg: #f7faf7;
+        --surface: #ffffff;
+        --border: rgba(0, 66, 37, 0.08);
+        --text: #003153;
+        --text-muted: #6e8c6e;
+        --primary-green: #004225;
+        --accent-green: #92bb37;
+        --radius: 12px;
       }
 
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .msg-row.user {
-      flex-direction: row-reverse;
-    }
-
-    /* ─── Avatars ─── */
-    .avatar {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 700;
-      flex-shrink: 0;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
-    }
-
-    .avatar.bot-avatar {
-      background: var(--primary-green);
-      color: #ffffff;
-    }
-
-    .avatar.user-avatar {
-      background: #ecede3;
-      color: var(--primary-green);
-      border: 1px solid rgba(0, 66, 37, 0.1);
-    }
-
-    /* ─── Text Bubbles ─── */
-    .bubble {
-      max-width: 80%;
-      font-size: 15px;
-      line-height: 1.6;
-      word-break: break-word;
-    }
-
-    /* Bot message styled as a premium card banner */
-    .bubble.bot {
-      background: linear-gradient(135deg, rgba(0, 66, 37, 0.02) 0%, rgba(146, 187, 55, 0.03) 100%), #ffffff;
-      border: 1px solid rgba(0, 66, 37, 0.08);
-      border-left: 4px solid var(--accent-green);
-      border-radius: var(--radius);
-      padding: 16px 20px;
-      box-shadow: 0 4px 16px rgba(0, 66, 37, 0.04);
-      color: var(--text);
-      width: 100%;
-      max-width: 85%;
-      margin: 6px 0;
-    }
-
-    .bubble.bot em {
-      font-style: italic;
-      font-weight: 500;
-    }
-
-    /* User message styled with solid green bubble */
-    .bubble.user {
-      background: var(--primary-green);
-      color: #ffffff;
-      padding: 10px 16px;
-      border-radius: 16px;
-      border-top-right-radius: 2px;
-      box-shadow: 0 4px 12px rgba(0, 66, 37, 0.08);
-    }
-
-    /* Markdown/HTML formatting support */
-    .bubble strong {
-      font-weight: 700;
-      color: inherit;
-    }
-
-    .bubble ul {
-      margin: 8px 0;
-      padding-left: 20px;
-      list-style-type: disc;
-    }
-
-    .bubble li {
-      margin: 4px 0;
-    }
-
-    /* FAQ Title & Body Formatting inside bot bubble */
-    .faq-banner-title {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-weight: 700;
-      color: var(--primary-green);
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      opacity: 0.85;
-    }
-
-    .faq-banner-body {
-      font-size: 14.5px;
-      line-height: 1.65;
-    }
-
-    .faq-banner-body ul {
-      margin: 8px 0 0 0;
-      padding-left: 20px;
-      list-style-type: disc;
-    }
-
-    .faq-banner-body li {
-      margin: 6px 0;
-      color: var(--text);
-    }
-
-    /* ─── Onboarding Pills ─── */
-    .onboarding-pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-left: 48px;
-      /* aligns to match text offset under bot avatar */
-      animation: bubbleAppear 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-
-    .pill-btn {
-      background: #ffffff;
-      border: 1.5px solid var(--primary-green);
-      color: var(--primary-green);
-      border-radius: 20px;
-      padding: 8px 18px;
-      font-size: 13.5px;
-      font-weight: 500;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.2s ease-in-out;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.01);
-    }
-
-    .pill-btn:hover {
-      background: rgba(0, 66, 37, 0.04);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 8px rgba(0, 66, 37, 0.08);
-    }
-
-    .pill-btn:active {
-      transform: translateY(0);
-    }
-
-    /* ─── Typing Indicator ─── */
-    .typing-row {
-      display: none;
-      align-items: center;
-      gap: 14px;
-      width: 100%;
-    }
-
-    .typing-row.visible {
-      display: flex;
-    }
-
-    .typing-bubble {
-      background: #f4f6f4;
-      border-radius: 16px;
-      border-top-left-radius: 2px;
-      padding: 10px 16px;
-      display: flex;
-      gap: 4px;
-      align-items: center;
-      border: 1px solid rgba(0, 66, 37, 0.04);
-    }
-
-    .typing-bubble span {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--primary-green);
-      opacity: 0.6;
-      animation: bounce 1.2s infinite;
-    }
-
-    .typing-bubble span:nth-child(2) {
-      animation-delay: 0.2s;
-    }
-
-    .typing-bubble span:nth-child(3) {
-      animation-delay: 0.4s;
-    }
-
-    @keyframes bounce {
-
-      0%,
-      80%,
-      100% {
-        transform: translateY(0);
-        opacity: 0.4;
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
       }
 
-      40% {
-        transform: translateY(-4px);
-        opacity: 1;
-      }
-    }
-
-    /* ─── Input Bar ─── */
-    .input-bar {
-      width: 100%;
-    }
-
-    .input-wrapper {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      border: 1.5px solid var(--primary-green);
-      border-radius: 8px;
-      padding: 8px 12px;
-      background: #ffffff;
-      transition: box-shadow 0.2s ease-in-out;
-    }
-
-    .input-wrapper:focus-within {
-      box-shadow: 0 0 0 3px rgba(0, 66, 37, 0.1);
-    }
-
-    #chat-input {
-      flex: 1;
-      border: none;
-      background: transparent;
-      padding: 6px 4px;
-      font-size: 15px;
-      color: var(--text);
-      font-family: inherit;
-      outline: none;
-      height: 36px;
-      line-height: 1.5;
-      resize: none;
-    }
-
-    #chat-input::placeholder {
-      color: rgba(0, 66, 37, 0.5);
-    }
-
-    #send-btn {
-      width: 36px;
-      height: 36px;
-      border: 1.5px solid var(--primary-green);
-      background: transparent;
-      color: var(--primary-green);
-      border-radius: 6px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
-      flex-shrink: 0;
-    }
-
-    #send-btn:hover:not(:disabled) {
-      background: var(--primary-green);
-      color: #ffffff;
-    }
-
-    #send-btn:disabled {
-      opacity: 0.35;
-      cursor: not-allowed;
-    }
-
-    #send-btn svg {
-      width: 16px;
-      height: 16px;
-    }
-
-    /* ─── Mic Button ─── */
-    #mic-btn {
-      width: 36px;
-      height: 36px;
-      border: 1.5px solid rgba(0, 66, 37, 0.25);
-      background: transparent;
-      color: var(--text-muted);
-      border-radius: 6px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
-      flex-shrink: 0;
-      position: relative;
-    }
-
-    #mic-btn:hover:not(:disabled) {
-      border-color: var(--primary-green);
-      color: var(--primary-green);
-      background: rgba(0, 66, 37, 0.05);
-    }
-
-    #mic-btn:disabled {
-      opacity: 0.35;
-      cursor: not-allowed;
-    }
-
-    #mic-btn svg {
-      width: 16px;
-      height: 16px;
-    }
-
-    #mic-btn.recording {
-      border-color: #e53935;
-      color: #e53935;
-      background: rgba(229, 57, 53, 0.08);
-      animation: mic-pulse 1.2s ease-in-out infinite;
-    }
-
-    @keyframes mic-pulse {
-
-      0%,
-      100% {
-        box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.35);
-      }
-
-      50% {
-        box-shadow: 0 0 0 7px rgba(229, 57, 53, 0);
-      }
-    }
-
-    /* ─── Voice Status Toast ─── */
-    #voice-toast {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%) translateY(20px);
-      background: var(--primary-green);
-      color: #ffffff;
-      font-size: 13px;
-      font-weight: 500;
-      padding: 9px 20px;
-      border-radius: 30px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s ease, transform 0.25s ease;
-      z-index: 9999;
-      white-space: nowrap;
-    }
-
-    #voice-toast.visible {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-
-    #voice-toast.error {
-      background: #c62828;
-    }
-
-    /* Animated sound wave bars inside toast */
-    .voice-wave {
-      display: flex;
-      align-items: center;
-      gap: 3px;
-      height: 16px;
-    }
-
-    .voice-wave span {
-      display: inline-block;
-      width: 3px;
-      border-radius: 3px;
-      background: rgba(255, 255, 255, 0.85);
-      animation: wave-bar 0.8s ease-in-out infinite;
-    }
-
-    .voice-wave span:nth-child(1) {
-      height: 6px;
-      animation-delay: 0s;
-    }
-
-    .voice-wave span:nth-child(2) {
-      height: 12px;
-      animation-delay: 0.15s;
-    }
-
-    .voice-wave span:nth-child(3) {
-      height: 16px;
-      animation-delay: 0.3s;
-    }
-
-    .voice-wave span:nth-child(4) {
-      height: 12px;
-      animation-delay: 0.45s;
-    }
-
-    .voice-wave span:nth-child(5) {
-      height: 6px;
-      animation-delay: 0.6s;
-    }
-
-    @keyframes wave-bar {
-
-      0%,
-      100% {
-        transform: scaleY(0.4);
-        opacity: 0.5;
-      }
-
-      50% {
-        transform: scaleY(1);
-        opacity: 1;
-      }
-    }
-
-    @media (max-width: 768px) {
       body {
-        padding: 20px 10px;
+        font-family: "Inter", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+        overflow-y: auto;
       }
 
+      /* ─── Main Section Layout ─── */
+      .conversation-container {
+        width: 100%;
+        max-width: 900px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      .conversation-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        padding: 0 4px;
+      }
+
+      .conversation-header h2 {
+        font-size: clamp(24px, 4vw, 34px);
+        font-weight: 700;
+        color: var(--primary-green);
+        margin-bottom: 6px;
+        letter-spacing: -0.5px;
+      }
+
+      .conversation-header .subtitle {
+        font-family: "Playfair Display", serif;
+        font-style: italic;
+        font-size: clamp(16px, 2.5vw, 22px);
+        color: #570000;
+        /* Red brand accent color */
+        margin: 0;
+      }
+
+      .conversation-header .chat-logo {
+        width: 54px;
+        height: 54px;
+        object-fit: contain;
+      }
+
+      /* ─── Chat Card ─── */
       .chat-card {
-        padding: 16px;
+        background: var(--surface);
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        padding: 24px;
+        box-shadow: 0 10px 30px -10px rgba(0, 66, 37, 0.03);
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        width: 100%;
+      }
+
+      /* ─── Messages List ─── */
+      .chat-window {
+        max-height: 400px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
         gap: 16px;
+        padding-right: 8px;
+        scroll-behavior: smooth;
+        scrollbar-width: thin;
+        scrollbar-color: var(--primary-green) rgba(0, 0, 0, 0.02);
       }
 
-      .onboarding-pills {
-        margin-left: 0;
+      .chat-window::-webkit-scrollbar {
+        width: 6px;
       }
 
+      .chat-window::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.02);
+        border-radius: 3px;
+      }
+
+      .chat-window::-webkit-scrollbar-thumb {
+        background: var(--primary-green);
+        border-radius: 3px;
+      }
+
+      /* ─── Message Rows ─── */
+      .msg-row {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        width: 100%;
+        animation: bubbleAppear 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      @keyframes bubbleAppear {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .msg-row.user {
+        flex-direction: row-reverse;
+      }
+
+      /* ─── Avatars ─── */
+      .avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 700;
+        flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+      }
+
+      .avatar.bot-avatar {
+        background: var(--primary-green);
+        color: #ffffff;
+      }
+
+      .avatar.user-avatar {
+        background: #ecede3;
+        color: var(--primary-green);
+        border: 1px solid rgba(0, 66, 37, 0.1);
+      }
+
+      /* ─── Text Bubbles ─── */
       .bubble {
+        max-width: 80%;
+        font-size: 15px;
+        line-height: 1.6;
+        word-break: break-word;
+      }
+
+      /* Bot message styled as a premium card banner */
+      .bubble.bot {
+        background:
+          linear-gradient(
+            135deg,
+            rgba(0, 66, 37, 0.02) 0%,
+            rgba(146, 187, 55, 0.03) 100%
+          ),
+          #ffffff;
+        border: 1px solid rgba(0, 66, 37, 0.08);
+        border-left: 4px solid var(--accent-green);
+        border-radius: var(--radius);
+        padding: 16px 20px;
+        box-shadow: 0 4px 16px rgba(0, 66, 37, 0.04);
+        color: var(--text);
+        width: 100%;
         max-width: 85%;
-      }
-    }
-
-    /* ─── Language Selector ─── */
-    .lang-selector-wrap {
-      position: relative;
-      display: inline-block;
-    }
-
-    #lang-btn {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: #ffffff;
-      border: 1.5px solid rgba(0, 66, 37, 0.2);
-      border-radius: 20px;
-      padding: 6px 14px 6px 10px;
-      cursor: pointer;
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--primary-green);
-      transition: all 0.2s ease;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-      white-space: nowrap;
-    }
-
-    #lang-btn:hover {
-      background: rgba(0, 66, 37, 0.05);
-      border-color: var(--primary-green);
-    }
-
-    #lang-btn svg {
-      width: 15px;
-      height: 15px;
-      flex-shrink: 0;
-    }
-
-    #lang-dropdown {
-      display: none;
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      background: #ffffff;
-      border: 1.5px solid rgba(0, 66, 37, 0.12);
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0, 66, 37, 0.12);
-      z-index: 100;
-      overflow: hidden;
-      min-width: 180px;
-      animation: dropdownAppear 0.2s ease forwards;
-    }
-
-    @keyframes dropdownAppear {
-      from {
-        opacity: 0;
-        transform: translateY(-6px);
+        margin: 6px 0;
       }
 
-      to {
-        opacity: 1;
+      .bubble.bot em {
+        font-style: italic;
+        font-weight: 500;
+      }
+
+      /* User message styled with solid green bubble */
+      .bubble.user {
+        background: var(--primary-green);
+        color: #ffffff;
+        padding: 10px 16px;
+        border-radius: 16px;
+        border-top-right-radius: 2px;
+        box-shadow: 0 4px 12px rgba(0, 66, 37, 0.08);
+      }
+
+      /* Markdown/HTML formatting support */
+      .bubble strong {
+        font-weight: 700;
+        color: inherit;
+      }
+
+      .bubble ul {
+        margin: 8px 0;
+        padding-left: 20px;
+        list-style-type: disc;
+      }
+
+      .bubble li {
+        margin: 4px 0;
+      }
+
+      /* FAQ Title & Body Formatting inside bot bubble */
+      .faq-banner-title {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+        color: var(--primary-green);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        opacity: 0.85;
+      }
+
+      .faq-banner-body {
+        font-size: 14.5px;
+        line-height: 1.65;
+      }
+
+      .faq-banner-body ul {
+        margin: 8px 0 0 0;
+        padding-left: 20px;
+        list-style-type: disc;
+      }
+
+      .faq-banner-body li {
+        margin: 6px 0;
+        color: var(--text);
+      }
+
+      /* ─── Onboarding Pills ─── */
+      .onboarding-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-left: 48px;
+        /* aligns to match text offset under bot avatar */
+        animation: bubbleAppear 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      .pill-btn {
+        background: #ffffff;
+        border: 1.5px solid var(--primary-green);
+        color: var(--primary-green);
+        border-radius: 20px;
+        padding: 8px 18px;
+        font-size: 13.5px;
+        font-weight: 500;
+        cursor: pointer;
+        font-family: inherit;
+        transition: all 0.2s ease-in-out;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.01);
+      }
+
+      .pill-btn:hover {
+        background: rgba(0, 66, 37, 0.04);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 66, 37, 0.08);
+      }
+
+      .pill-btn:active {
         transform: translateY(0);
       }
-    }
 
-    #lang-dropdown.open {
-      display: block;
-    }
+      /* ─── Typing Indicator ─── */
+      .typing-row {
+        display: none;
+        align-items: center;
+        gap: 14px;
+        width: 100%;
+      }
 
-    .lang-option {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 16px;
-      cursor: pointer;
-      font-size: 13.5px;
-      font-family: inherit;
-      color: var(--text);
-      border: none;
-      background: transparent;
-      width: 100%;
-      text-align: left;
-      transition: background 0.15s ease;
-    }
+      .typing-row.visible {
+        display: flex;
+      }
 
-    .lang-option:hover {
-      background: rgba(0, 66, 37, 0.05);
-    }
+      .typing-bubble {
+        background: #f4f6f4;
+        border-radius: 16px;
+        border-top-left-radius: 2px;
+        padding: 10px 16px;
+        display: flex;
+        gap: 4px;
+        align-items: center;
+        border: 1px solid rgba(0, 66, 37, 0.04);
+      }
 
-    .lang-option.active {
-      font-weight: 600;
-      color: var(--primary-green);
-      background: rgba(0, 66, 37, 0.04);
-    }
+      .typing-bubble span {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--primary-green);
+        opacity: 0.6;
+        animation: bounce 1.2s infinite;
+      }
 
-    .lang-option .lang-flag {
-      font-size: 17px;
-      line-height: 1;
-    }
+      .typing-bubble span:nth-child(2) {
+        animation-delay: 0.2s;
+      }
 
-    .lang-divider {
-      height: 1px;
-      background: rgba(0, 66, 37, 0.08);
-      margin: 2px 0;
-    }
-  </style>
-</head>
+      .typing-bubble span:nth-child(3) {
+        animation-delay: 0.4s;
+      }
 
-<body>
+      @keyframes bounce {
+        0%,
+        80%,
+        100% {
+          transform: translateY(0);
+          opacity: 0.4;
+        }
 
-  <div class="conversation-container">
-    <!-- Header with title, language selector and logo -->
-    <div class="conversation-header">
-      <div>
-        <h2>Let's start a conversation.</h2>
-        <p class="subtitle">It could be magical.</p>
-      </div>
-      <div style="display:flex; align-items:center; gap:14px;">
-        <!-- Language selector -->
-        <div class="lang-selector-wrap" id="lang-selector-wrap">
-          <button id="lang-btn" aria-label="Select language" onclick="toggleLangDropdown()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-              stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="2" y1="12" x2="22" y2="12" />
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-            </svg>
-            <span id="lang-btn-label">EN</span>
-          </button>
-          <div id="lang-dropdown" role="listbox" aria-label="Language options">
-            <button class="lang-option active" onclick="selectLanguage('english', 'English', 'English', 'en')"
-              data-lang="english">
-              <span class="lang-flag">🇬🇧</span> English
-            </button>
-            <div class="lang-divider"></div>
-            <button class="lang-option" onclick="selectLanguage('tamil', 'Tamil', 'தமிழ்', 'ta')" data-lang="tamil">
-              <span class="lang-flag">🇮🇳</span> தமிழ் (Tamil)
-            </button>
-            <button class="lang-option" onclick="selectLanguage('hindi', 'Hindi', 'हिन्दी', 'hi')" data-lang="hindi">
-              <span class="lang-flag">🇮🇳</span> हिन्दी (Hindi)
-            </button>
-            <button class="lang-option" onclick="selectLanguage('kannada', 'Kannada', 'ಕನ್ನಡ', 'kn')"
-              data-lang="kannada">
-              <span class="lang-flag">🇮🇳</span> ಕನ್ನಡ (Kannada)
-            </button>
-            <button class="lang-option" onclick="selectLanguage('telugu', 'Telugu', 'తెలుగు', 'te')" data-lang="telugu">
-              <span class="lang-flag">🇮🇳</span> తెలుగు (Telugu)
-            </button>
-            <button class="lang-option" onclick="selectLanguage('malayalam', 'Malayalam', 'മലയാളം', 'ml')"
-              data-lang="malayalam">
-              <span class="lang-flag">🇮🇳</span> മലയാളം (Malayalam)
-            </button>
-            <button class="lang-option" onclick="selectLanguage('urdu', 'Urdu', 'اردو', 'ur')" data-lang="urdu">
-              <span class="lang-flag">🇵🇰</span> اردو (Urdu)
-            </button>
-          </div>
+        40% {
+          transform: translateY(-4px);
+          opacity: 1;
+        }
+      }
+
+      /* ─── Input Bar ─── */
+      .input-bar {
+        width: 100%;
+      }
+
+      .input-wrapper {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        border: 1.5px solid var(--primary-green);
+        border-radius: 8px;
+        padding: 8px 12px;
+        background: #ffffff;
+        transition: box-shadow 0.2s ease-in-out;
+      }
+
+      .input-wrapper:focus-within {
+        box-shadow: 0 0 0 3px rgba(0, 66, 37, 0.1);
+      }
+
+      #chat-input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        padding: 6px 4px;
+        font-size: 15px;
+        color: var(--text);
+        font-family: inherit;
+        outline: none;
+        height: 36px;
+        line-height: 1.5;
+        resize: none;
+      }
+
+      #chat-input::placeholder {
+        color: rgba(0, 66, 37, 0.5);
+      }
+
+      #send-btn {
+        width: 36px;
+        height: 36px;
+        border: 1.5px solid var(--primary-green);
+        background: transparent;
+        color: var(--primary-green);
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+      }
+
+      #send-btn:hover:not(:disabled) {
+        background: var(--primary-green);
+        color: #ffffff;
+      }
+
+      #send-btn:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+
+      #send-btn svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      /* ─── Mic Button ─── */
+      #mic-btn {
+        width: 36px;
+        height: 36px;
+        border: 1.5px solid rgba(0, 66, 37, 0.25);
+        background: transparent;
+        color: var(--text-muted);
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+        position: relative;
+      }
+
+      #mic-btn:hover:not(:disabled) {
+        border-color: var(--primary-green);
+        color: var(--primary-green);
+        background: rgba(0, 66, 37, 0.05);
+      }
+
+      #mic-btn:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+
+      #mic-btn svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      #mic-btn.recording {
+        border-color: #e53935;
+        color: #e53935;
+        background: rgba(229, 57, 53, 0.08);
+        animation: mic-pulse 1.2s ease-in-out infinite;
+      }
+
+      @keyframes mic-pulse {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.35);
+        }
+
+        50% {
+          box-shadow: 0 0 0 7px rgba(229, 57, 53, 0);
+        }
+      }
+
+      /* ─── Voice Status Toast ─── */
+      #voice-toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: var(--primary-green);
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 9px 20px;
+        border-radius: 30px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          opacity 0.25s ease,
+          transform 0.25s ease;
+        z-index: 9999;
+        white-space: nowrap;
+      }
+
+      #voice-toast.visible {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+
+      #voice-toast.error {
+        background: #c62828;
+      }
+
+      /* Animated sound wave bars inside toast */
+      .voice-wave {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        height: 16px;
+      }
+
+      .voice-wave span {
+        display: inline-block;
+        width: 3px;
+        border-radius: 3px;
+        background: rgba(255, 255, 255, 0.85);
+        animation: wave-bar 0.8s ease-in-out infinite;
+      }
+
+      .voice-wave span:nth-child(1) {
+        height: 6px;
+        animation-delay: 0s;
+      }
+
+      .voice-wave span:nth-child(2) {
+        height: 12px;
+        animation-delay: 0.15s;
+      }
+
+      .voice-wave span:nth-child(3) {
+        height: 16px;
+        animation-delay: 0.3s;
+      }
+
+      .voice-wave span:nth-child(4) {
+        height: 12px;
+        animation-delay: 0.45s;
+      }
+
+      .voice-wave span:nth-child(5) {
+        height: 6px;
+        animation-delay: 0.6s;
+      }
+
+      @keyframes wave-bar {
+        0%,
+        100% {
+          transform: scaleY(0.4);
+          opacity: 0.5;
+        }
+
+        50% {
+          transform: scaleY(1);
+          opacity: 1;
+        }
+      }
+
+      @media (max-width: 768px) {
+        body {
+          padding: 20px 10px;
+        }
+
+        .chat-card {
+          padding: 16px;
+          gap: 16px;
+        }
+
+        .onboarding-pills {
+          margin-left: 0;
+        }
+
+        .bubble {
+          max-width: 85%;
+        }
+      }
+
+      /* ─── Language Selector ─── */
+      .lang-selector-wrap {
+        position: relative;
+        display: inline-block;
+      }
+
+      #lang-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: #ffffff;
+        border: 1.5px solid rgba(0, 66, 37, 0.2);
+        border-radius: 20px;
+        padding: 6px 14px 6px 10px;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--primary-green);
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        white-space: nowrap;
+      }
+
+      #lang-btn:hover {
+        background: rgba(0, 66, 37, 0.05);
+        border-color: var(--primary-green);
+      }
+
+      #lang-btn svg {
+        width: 15px;
+        height: 15px;
+        flex-shrink: 0;
+      }
+
+      #lang-dropdown {
+        display: none;
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        background: #ffffff;
+        border: 1.5px solid rgba(0, 66, 37, 0.12);
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 66, 37, 0.12);
+        z-index: 100;
+        overflow: hidden;
+        min-width: 180px;
+        animation: dropdownAppear 0.2s ease forwards;
+      }
+
+      @keyframes dropdownAppear {
+        from {
+          opacity: 0;
+          transform: translateY(-6px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      #lang-dropdown.open {
+        display: block;
+      }
+
+      .lang-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        cursor: pointer;
+        font-size: 13.5px;
+        font-family: inherit;
+        color: var(--text);
+        border: none;
+        background: transparent;
+        width: 100%;
+        text-align: left;
+        transition: background 0.15s ease;
+      }
+
+      .lang-option:hover {
+        background: rgba(0, 66, 37, 0.05);
+      }
+
+      .lang-option.active {
+        font-weight: 600;
+        color: var(--primary-green);
+        background: rgba(0, 66, 37, 0.04);
+      }
+
+      .lang-option .lang-flag {
+        font-size: 17px;
+        line-height: 1;
+      }
+
+      .lang-divider {
+        height: 1px;
+        background: rgba(0, 66, 37, 0.08);
+        margin: 2px 0;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="conversation-container">
+      <!-- Header with title, language selector and logo -->
+      <div class="conversation-header">
+        <div>
+          <h2>Let's start a conversation.</h2>
+          <p class="subtitle">It could be magical.</p>
         </div>
-        <img src="./assets/images/varsapradaya-icon.webp" alt="Varsapradaya Icon" class="chat-logo"
-          onerror="this.style.display='none';" />
-      </div>
-    </div>
-
-    <!-- Chat Card -->
-    <div class="chat-card">
-      <!-- Chat Window List -->
-      <div class="chat-window" id="chat-window">
-        <!-- Initial Onboarding Message -->
-        <div class="msg-row bot">
-          <div class="avatar bot-avatar" style="background: var(--primary-green); color: #ffffff;">FF</div>
-          <div class="bubble bot">
-            <div class="faq-banner-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                stroke-linejoin="round" style="width: 13px; height: 13px; color: var(--accent-green);">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="16" x2="12" y2="12"></line>
-                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        <div style="display: flex; align-items: center; gap: 14px">
+          <!-- Language selector -->
+          <div class="lang-selector-wrap" id="lang-selector-wrap">
+            <button
+              id="lang-btn"
+              aria-label="Select language"
+              onclick="toggleLangDropdown()"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <line x1="2" y1="12" x2="22" y2="12" />
+                <path
+                  d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                />
               </svg>
-              <span>Varsapradaya Guide</span>
+              <span id="lang-btn-label">EN</span>
+            </button>
+            <div
+              id="lang-dropdown"
+              role="listbox"
+              aria-label="Language options"
+            >
+              <button
+                class="lang-option active"
+                onclick="selectLanguage('english', 'English', 'English', 'en')"
+                data-lang="english"
+              >
+                <span class="lang-flag">🇬🇧</span> English
+              </button>
+              <div class="lang-divider"></div>
+              <button
+                class="lang-option"
+                onclick="selectLanguage('tamil', 'Tamil', 'தமிழ்', 'ta')"
+                data-lang="tamil"
+              >
+                <span class="lang-flag">🇮🇳</span> தமிழ் (Tamil)
+              </button>
+              <button
+                class="lang-option"
+                onclick="selectLanguage('hindi', 'Hindi', 'हिन्दी', 'hi')"
+                data-lang="hindi"
+              >
+                <span class="lang-flag">🇮🇳</span> हिन्दी (Hindi)
+              </button>
+              <button
+                class="lang-option"
+                onclick="selectLanguage('kannada', 'Kannada', 'ಕನ್ನಡ', 'kn')"
+                data-lang="kannada"
+              >
+                <span class="lang-flag">🇮🇳</span> ಕನ್ನಡ (Kannada)
+              </button>
+              <button
+                class="lang-option"
+                onclick="selectLanguage('telugu', 'Telugu', 'తెలుగు', 'te')"
+                data-lang="telugu"
+              >
+                <span class="lang-flag">🇮🇳</span> తెలుగు (Telugu)
+              </button>
+              <button
+                class="lang-option"
+                onclick="
+                  selectLanguage('malayalam', 'Malayalam', 'മലയാളം', 'ml')
+                "
+                data-lang="malayalam"
+              >
+                <span class="lang-flag">🇮🇳</span> മലയാളം (Malayalam)
+              </button>
+              <button
+                class="lang-option"
+                onclick="selectLanguage('urdu', 'Urdu', 'اردو', 'ur')"
+                data-lang="urdu"
+              >
+                <span class="lang-flag">🇵🇰</span> اردو (Urdu)
+              </button>
             </div>
-            <div class="faq-banner-body">
-              <em>Tell me about yourself —</em> are you a grower, an investor, or here for something else?
+          </div>
+          <img
+            src="./assets/images/varsapradaya-icon.webp"
+            alt="Varsapradaya Icon"
+            class="chat-logo"
+            onerror="this.style.display = 'none'"
+          />
+        </div>
+      </div>
+
+      <!-- Chat Card -->
+      <div class="chat-card">
+        <!-- Chat Window List -->
+        <div class="chat-window" id="chat-window">
+          <!-- Initial Onboarding Message -->
+          <div class="msg-row bot">
+            <div
+              class="avatar bot-avatar"
+              style="background: var(--primary-green); color: #ffffff"
+            >
+              FF
+            </div>
+            <div class="bubble bot">
+              <div class="faq-banner-title">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  style="width: 13px; height: 13px; color: var(--accent-green)"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                <span>Varsapradaya Guide</span>
+              </div>
+              <div class="faq-banner-body">
+                <em>Tell me about yourself —</em> are you a grower, an investor,
+                or here for something else?
+              </div>
+            </div>
+          </div>
+
+          <!-- Typing Indicator -->
+          <div class="typing-row" id="typing-indicator">
+            <div class="avatar bot-avatar">FF</div>
+            <div class="typing-bubble">
+              <span></span><span></span><span></span>
             </div>
           </div>
         </div>
 
-        <!-- Typing Indicator -->
-        <div class="typing-row" id="typing-indicator">
-          <div class="avatar bot-avatar">FF</div>
-          <div class="typing-bubble">
-            <span></span><span></span><span></span>
+        <!-- Input Bar -->
+        <div class="input-bar">
+          <div class="input-wrapper">
+            <textarea
+              id="chat-input"
+              placeholder="Send us a message. Type Here"
+              rows="1"
+            ></textarea>
+            <button
+              id="mic-btn"
+              onclick="toggleVoice()"
+              aria-label="Voice input"
+              title="Click to speak"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"
+                />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="23" />
+                <line x1="8" y1="23" x2="16" y2="23" />
+              </svg>
+            </button>
+            <button
+              id="send-btn"
+              onclick="sendMessage()"
+              aria-label="Send message"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Input Bar -->
-      <div class="input-bar">
-        <div class="input-wrapper">
-          <textarea id="chat-input" placeholder="Send us a message. Type Here" rows="1"></textarea>
-          <button id="mic-btn" onclick="toggleVoice()" aria-label="Voice input" title="Click to speak">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-              stroke-linejoin="round">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-              <line x1="12" y1="19" x2="12" y2="23" />
-              <line x1="8" y1="23" x2="16" y2="23" />
-            </svg>
-          </button>
-          <button id="send-btn" onclick="sendMessage()" aria-label="Send message">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-              stroke-linejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-          </button>
-        </div>
+    <!-- Voice Status Toast -->
+    <div id="voice-toast">
+      <div class="voice-wave">
+        <span></span><span></span><span></span><span></span><span></span>
       </div>
+      <span id="voice-toast-text">Listening...</span>
     </div>
-  </div>
 
-  <!-- Voice Status Toast -->
-  <div id="voice-toast">
-    <div class="voice-wave">
-      <span></span><span></span><span></span><span></span><span></span>
-    </div>
-    <span id="voice-toast-text">Listening...</span>
-  </div>
+    <script>
+      // ─── State & API Configuration ───
+      let API_BASE = "http://localhost:8002/api";
+      let thread_id = crypto.randomUUID();
+      let selectedLanguage = {
+        key: "english",
+        name: "English",
+        nativeName: "English",
+        code: "en",
+      };
 
-  <script>
-    // ─── State & API Configuration ───
-    let API_BASE = 'http://localhost:8000/api';
-    let thread_id = crypto.randomUUID();
-    let selectedLanguage = {
-      key: 'english',
-      name: 'English',
-      nativeName: 'English',
-      code: 'en'
-    };
-
-    async function detectApiPort() {
-      try {
-        const res = await fetch('http://127.0.0.1:8000/api/health');
-        if (!res.ok) throw new Error();
-      } catch (err) {
-        // Fallback to local API port detection in case of offline development/testing
+      async function detectApiPort() {
         try {
-          const resLocal8001 = await fetch('http://127.0.0.1:8001/api/health');
-          if (resLocal8001.ok) {
-            API_BASE = 'http://127.0.0.1:8001/api';
-            console.log("Dynamic API Port Detection: Fell back to local backend on port 8001.");
+          const res = await fetch("http://127.0.0.1:8000/api/health");
+          if (!res.ok) throw new Error();
+        } catch (err) {
+          // Fallback to local API port detection in case of offline development/testing
+          try {
+            const resLocal8001 = await fetch(
+              "http://127.0.0.1:8001/api/health",
+            );
+            if (resLocal8001.ok) {
+              API_BASE = "http://127.0.0.1:8001/api";
+              console.log(
+                "Dynamic API Port Detection: Fell back to local backend on port 8001.",
+              );
+            }
+          } catch (e) {
+            console.warn(
+              "Dynamic API Port Detection: Local backends on port 8000 and 8001 are unreachable.",
+            );
           }
-        } catch (e) {
-          console.warn("Dynamic API Port Detection: Local backends on port 8000 and 8001 are unreachable.");
         }
       }
-    }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const forceApi = urlParams.get('api');
-    if (forceApi) {
-      API_BASE = forceApi + (forceApi.endsWith('/api') ? '' : '/api');
-      console.log("Forced API Base via query parameter:", API_BASE);
-    } else {
-      detectApiPort();
-    }
-
-    let currentAgent = null;
-    let isWaiting = false;
-
-    // ─── Voice / Speech Recognition ───
-    // Maps our internal language codes to BCP-47 locale codes used by the Web Speech API
-    const SPEECH_LANG_MAP = {
-      'en': 'en-IN',   // English (India accent preferred)
-      'ta': 'ta-IN',   // Tamil
-      'hi': 'hi-IN',   // Hindi
-      'te': 'te-IN',   // Telugu
-      'kn': 'kn-IN',   // Kannada
-      'ml': 'ml-IN',   // Malayalam
-      'ur': 'ur-PK',   // Urdu
-    };
-
-    let recognition = null;
-    let isRecording = false;
-    let voiceToastTimer = null;
-
-    function _isVoiceSupported() {
-      return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
-    }
-
-    function showVoiceToast(message, isError = false, keepAlive = false) {
-      const toast = document.getElementById('voice-toast');
-      const toastText = document.getElementById('voice-toast-text');
-      const wave = toast.querySelector('.voice-wave');
-      clearTimeout(voiceToastTimer);
-      toastText.textContent = message;
-      toast.classList.toggle('error', isError);
-      wave.style.display = isError ? 'none' : 'flex';
-      toast.classList.add('visible');
-      if (!keepAlive) {
-        voiceToastTimer = setTimeout(() => toast.classList.remove('visible'), 3000);
-      }
-    }
-
-    function hideVoiceToast() {
-      clearTimeout(voiceToastTimer);
-      document.getElementById('voice-toast').classList.remove('visible');
-    }
-
-    function toggleVoice() {
-      if (!_isVoiceSupported()) {
-        showVoiceToast('Voice input not supported in this browser. Try Chrome.', true);
-        return;
-      }
-      if (isRecording) {
-        stopVoice();
+      const urlParams = new URLSearchParams(window.location.search);
+      const forceApi = urlParams.get("api");
+      if (forceApi) {
+        API_BASE = forceApi + (forceApi.endsWith("/api") ? "" : "/api");
+        console.log("Forced API Base via query parameter:", API_BASE);
       } else {
-        startVoice();
+        detectApiPort();
       }
-    }
 
-    function startVoice() {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognition = new SpeechRecognition();
+      let currentAgent = null;
+      let isWaiting = false;
 
-      // Use the user's currently selected language for speech recognition
-      const speechLang = SPEECH_LANG_MAP[selectedLanguage.code] || 'en-IN';
-      recognition.lang = speechLang;
-      recognition.continuous = false;        // One utterance at a time
-      recognition.interimResults = true;     // Show live transcription in the input
-      recognition.maxAlternatives = 1;
-
-      const micBtn = document.getElementById('mic-btn');
-      const inputEl = document.getElementById('chat-input');
-
-      recognition.onstart = () => {
-        isRecording = true;
-        micBtn.classList.add('recording');
-        showVoiceToast(`Listening in ${selectedLanguage.name}...`, false, true);
-        inputEl.placeholder = '🎙️ Listening... speak now';
+      // ─── Voice / Speech Recognition ───
+      // Maps our internal language codes to BCP-47 locale codes used by the Web Speech API
+      const SPEECH_LANG_MAP = {
+        en: "en-IN", // English (India accent preferred)
+        ta: "ta-IN", // Tamil
+        hi: "hi-IN", // Hindi
+        te: "te-IN", // Telugu
+        kn: "kn-IN", // Kannada
+        ml: "ml-IN", // Malayalam
+        ur: "ur-PK", // Urdu
       };
 
-      recognition.onresult = (event) => {
-        let transcript = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
+      let recognition = null;
+      let isRecording = false;
+      let voiceToastTimer = null;
+
+      function _isVoiceSupported() {
+        return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+      }
+
+      function showVoiceToast(message, isError = false, keepAlive = false) {
+        const toast = document.getElementById("voice-toast");
+        const toastText = document.getElementById("voice-toast-text");
+        const wave = toast.querySelector(".voice-wave");
+        clearTimeout(voiceToastTimer);
+        toastText.textContent = message;
+        toast.classList.toggle("error", isError);
+        wave.style.display = isError ? "none" : "flex";
+        toast.classList.add("visible");
+        if (!keepAlive) {
+          voiceToastTimer = setTimeout(
+            () => toast.classList.remove("visible"),
+            3000,
+          );
         }
-        // Show live interim result in the input box
-        inputEl.value = transcript;
-        inputEl.style.height = 'auto';
-        inputEl.style.height = inputEl.scrollHeight + 'px';
-      };
+      }
 
-      recognition.onend = () => {
-        isRecording = false;
-        micBtn.classList.remove('recording');
-        inputEl.placeholder = 'Send us a message. Type Here';
-        hideVoiceToast();
+      function hideVoiceToast() {
+        clearTimeout(voiceToastTimer);
+        document.getElementById("voice-toast").classList.remove("visible");
+      }
 
-        // If there is text in the box, auto-send it
-        const finalText = inputEl.value.trim();
-        if (finalText && !isWaiting) {
-          showVoiceToast(`"${finalText.substring(0, 40)}${finalText.length > 40 ? '...' : ''}" — sending`, false);
-          setTimeout(() => sendMessage(), 400);
+      function toggleVoice() {
+        if (!_isVoiceSupported()) {
+          showVoiceToast(
+            "Voice input not supported in this browser. Try Chrome.",
+            true,
+          );
+          return;
         }
-      };
+        if (isRecording) {
+          stopVoice();
+        } else {
+          startVoice();
+        }
+      }
 
-      recognition.onerror = (event) => {
-        isRecording = false;
-        micBtn.classList.remove('recording');
-        inputEl.placeholder = 'Send us a message. Type Here';
-        const errorMessages = {
-          'not-allowed': 'Microphone access denied. Please allow microphone in browser settings.',
-          'no-speech': 'No speech detected. Please try again.',
-          'network': 'Network error. Check your connection.',
-          'audio-capture': 'No microphone found. Please connect one.',
-          'aborted': 'Voice input cancelled.',
+      function startVoice() {
+        const SpeechRecognition =
+          window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+
+        // Use the user's currently selected language for speech recognition
+        const speechLang = SPEECH_LANG_MAP[selectedLanguage.code] || "en-IN";
+        recognition.lang = speechLang;
+        recognition.continuous = false; // One utterance at a time
+        recognition.interimResults = true; // Show live transcription in the input
+        recognition.maxAlternatives = 1;
+
+        const micBtn = document.getElementById("mic-btn");
+        const inputEl = document.getElementById("chat-input");
+
+        recognition.onstart = () => {
+          isRecording = true;
+          micBtn.classList.add("recording");
+          showVoiceToast(
+            `Listening in ${selectedLanguage.name}...`,
+            false,
+            true,
+          );
+          inputEl.placeholder = "🎙️ Listening... speak now";
         };
-        const msg = errorMessages[event.error] || `Voice error: ${event.error}`;
-        showVoiceToast(msg, true);
-      };
 
-      recognition.start();
-    }
+        recognition.onresult = (event) => {
+          let transcript = "";
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+          }
+          // Show live interim result in the input box
+          inputEl.value = transcript;
+          inputEl.style.height = "auto";
+          inputEl.style.height = inputEl.scrollHeight + "px";
+        };
 
-    function stopVoice() {
-      if (recognition) {
-        recognition.stop();
-        recognition = null;
+        recognition.onend = () => {
+          isRecording = false;
+          micBtn.classList.remove("recording");
+          inputEl.placeholder = "Send us a message. Type Here";
+          hideVoiceToast();
+
+          // If there is text in the box, auto-send it
+          const finalText = inputEl.value.trim();
+          if (finalText && !isWaiting) {
+            showVoiceToast(
+              `"${finalText.substring(0, 40)}${finalText.length > 40 ? "..." : ""}" — sending`,
+              false,
+            );
+            setTimeout(() => sendMessage(), 400);
+          }
+        };
+
+        recognition.onerror = (event) => {
+          isRecording = false;
+          micBtn.classList.remove("recording");
+          inputEl.placeholder = "Send us a message. Type Here";
+          const errorMessages = {
+            "not-allowed":
+              "Microphone access denied. Please allow microphone in browser settings.",
+            "no-speech": "No speech detected. Please try again.",
+            network: "Network error. Check your connection.",
+            "audio-capture": "No microphone found. Please connect one.",
+            aborted: "Voice input cancelled.",
+          };
+          const msg =
+            errorMessages[event.error] || `Voice error: ${event.error}`;
+          showVoiceToast(msg, true);
+        };
+
+        recognition.start();
       }
-    }
 
-    // Hide mic button entirely if browser doesn't support it
-    window.addEventListener('DOMContentLoaded', () => {
-      if (!_isVoiceSupported()) {
-        const btn = document.getElementById('mic-btn');
-        if (btn) btn.style.display = 'none';
+      function stopVoice() {
+        if (recognition) {
+          recognition.stop();
+          recognition = null;
+        }
       }
-    });
 
-    // ─── Language selector logic ───
-
-    function toggleLangDropdown() {
-      const dropdown = document.getElementById('lang-dropdown');
-      dropdown.classList.toggle('open');
-    }
-
-    function selectLanguage(langKey, langName, langNativeName, langCode) {
-      selectedLanguage = {
-        key: langKey,
-        name: langName,
-        nativeName: langNativeName,
-        code: langCode
-      };
-
-      // Update button label visually
-      const shortLabel = langCode.toUpperCase();
-      document.getElementById('lang-btn-label').textContent = shortLabel;
-
-      document.querySelectorAll('.lang-option').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.lang === langKey);
+      // Hide mic button entirely if browser doesn't support it
+      window.addEventListener("DOMContentLoaded", () => {
+        if (!_isVoiceSupported()) {
+          const btn = document.getElementById("mic-btn");
+          if (btn) btn.style.display = "none";
+        }
       });
-      document.getElementById('lang-dropdown').classList.remove('open');
-    }
 
-    // Close dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-      const wrap = document.getElementById('lang-selector-wrap');
-      if (wrap && !wrap.contains(e.target)) {
-        document.getElementById('lang-dropdown').classList.remove('open');
+      // ─── Language selector logic ───
+
+      function toggleLangDropdown() {
+        const dropdown = document.getElementById("lang-dropdown");
+        dropdown.classList.toggle("open");
       }
-    });
 
-    // ─── Show/Hide Onboarding Pills ───
-    function showPills() {
-      let pills = document.getElementById('chat-onboarding-pills');
-      if (!pills) {
-        pills = document.createElement('div');
-        pills.id = 'chat-onboarding-pills';
-        pills.className = 'onboarding-pills';
-        pills.innerHTML = `
+      function selectLanguage(langKey, langName, langNativeName, langCode) {
+        selectedLanguage = {
+          key: langKey,
+          name: langName,
+          nativeName: langNativeName,
+          code: langCode,
+        };
+
+        // Update button label visually
+        const shortLabel = langCode.toUpperCase();
+        document.getElementById("lang-btn-label").textContent = shortLabel;
+
+        document.querySelectorAll(".lang-option").forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.lang === langKey);
+        });
+        document.getElementById("lang-dropdown").classList.remove("open");
+      }
+
+      // Close dropdown when clicking outside
+      document.addEventListener("click", (e) => {
+        const wrap = document.getElementById("lang-selector-wrap");
+        if (wrap && !wrap.contains(e.target)) {
+          document.getElementById("lang-dropdown").classList.remove("open");
+        }
+      });
+
+      // ─── Show/Hide Onboarding Pills ───
+      function showPills() {
+        let pills = document.getElementById("chat-onboarding-pills");
+        if (!pills) {
+          pills = document.createElement("div");
+          pills.id = "chat-onboarding-pills";
+          pills.className = "onboarding-pills";
+          pills.innerHTML = `
           <button class="pill-btn" onclick="clickPill('grower', 'i am a grower', '🌱 Grower Advisor')">I'm a grower</button>
           <button class="pill-btn" onclick="clickPill('investor', 'i am an investor', '💰 Investor Advisor')">I'm an investor</button>
           <button class="pill-btn" onclick="clickPill('corporate', 'corporate partnership', '🏢 Business Advisor')">Corporate / Partnership</button>
           <button class="pill-btn" onclick="clickPill('exploring', 'just exploring', '🔍 Explorer Guide')">Just exploring</button>
         `;
+        }
+        pills.style.display = "flex";
+        insertBeforeTyping(pills);
+        scrollToBottom();
       }
-      pills.style.display = 'flex';
-      insertBeforeTyping(pills);
-      scrollToBottom();
-    }
 
-    function hidePills() {
-      const pills = document.getElementById('chat-onboarding-pills');
-      if (pills) {
-        pills.style.display = 'none';
+      function hidePills() {
+        const pills = document.getElementById("chat-onboarding-pills");
+        if (pills) {
+          pills.style.display = "none";
+        }
       }
-    }
 
-    // ─── Pill button click ───
-    function clickPill(category, message, agentLabel) {
-      currentAgent = category;
-      hidePills();
-      appendUserBubble(agentLabel);
-      sendToAPI(message);
-    }
+      // ─── Pill button click ───
+      function clickPill(category, message, agentLabel) {
+        currentAgent = category;
+        hidePills();
+        appendUserBubble(agentLabel);
+        sendToAPI(message);
+      }
 
-    // ─── Send typed message ───
-    function sendMessage() {
-      const input = document.getElementById('chat-input');
-      const text = input.value.trim();
-      if (!text || isWaiting) return;
-      input.value = '';
-      input.style.height = '36px';
+      // ─── Send typed message ───
+      function sendMessage() {
+        const input = document.getElementById("chat-input");
+        const text = input.value.trim();
+        if (!text || isWaiting) return;
+        input.value = "";
+        input.style.height = "36px";
 
-      hidePills();
-      appendUserBubble(text);
-      sendToAPI(text);
-    }
+        hidePills();
+        appendUserBubble(text);
+        sendToAPI(text);
+      }
 
-    // ─── Append user bubble ───
-    function appendUserBubble(text) {
-      const row = document.createElement('div');
-      row.className = 'msg-row user';
-      row.innerHTML = `
+      // ─── Append user bubble ───
+      function appendUserBubble(text) {
+        const row = document.createElement("div");
+        row.className = "msg-row user";
+        row.innerHTML = `
         <div class="avatar user-avatar">👤</div>
         <div class="bubble user">${escapeHtml(text)}</div>
       `;
-      insertBeforeTyping(row);
-      scrollToBottom();
-    }
+        insertBeforeTyping(row);
+        scrollToBottom();
+      }
 
-    // ─── Append bot bubble ───
-    function appendBotBubble(text, agentCategory, step) {
-      const row = document.createElement('div');
-      row.className = 'msg-row bot';
+      // ─── Append bot bubble ───
+      function appendBotBubble(text, agentCategory, step) {
+        const row = document.createElement("div");
+        row.className = "msg-row bot";
 
-      let headerTitle = "Varsapradaya Guide";
-      let headerIcon = `
+        let headerTitle = "Varsapradaya Guide";
+        let headerIcon = `
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px; color: var(--accent-green);">
           <circle cx="12" cy="12" r="10"></circle>
           <line x1="12" y1="16" x2="12" y2="12"></line>
@@ -1074,25 +1189,25 @@
         </svg>
       `;
 
-      if (step === 'chatting') {
-        headerTitle = "Advisory Response";
-        headerIcon = `
+        if (step === "chatting") {
+          headerTitle = "Advisory Response";
+          headerIcon = `
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px; color: var(--accent-green);">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
           </svg>
         `;
-      } else if (step === 'ended') {
-        headerTitle = "System Notification";
-        headerIcon = `
+        } else if (step === "ended") {
+          headerTitle = "System Notification";
+          headerIcon = `
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 13px; height: 13px; color: #ff3b30;">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="8" x2="12" y2="12"></line>
             <line x1="12" y1="16" x2="12.01" y2="16"></line>
           </svg>
         `;
-      }
+        }
 
-      row.innerHTML = `
+        row.innerHTML = `
         <div class="avatar bot-avatar" style="background: var(--primary-green); color: #ffffff;">FF</div>
         <div class="bubble bot">
           <div class="faq-banner-title">
@@ -1102,210 +1217,225 @@
           <div class="faq-banner-body">${formatText(text)}</div>
         </div>
       `;
-      insertBeforeTyping(row);
-      scrollToBottom();
-    }
-
-    // ─── Insert message before typing indicator ───
-    function insertBeforeTyping(el) {
-      const win = document.getElementById('chat-window');
-      const typing = document.getElementById('typing-indicator');
-      win.insertBefore(el, typing);
-    }
-
-    // ─── Show/hide typing indicator ───
-    function showTyping() {
-      isWaiting = true;
-      document.getElementById('typing-indicator').classList.add('visible');
-      // Disable mic while bot is typing
-      const micBtn = document.getElementById('mic-btn');
-      if (micBtn) micBtn.disabled = true;
-      scrollToBottom();
-    }
-
-    function hideTyping() {
-      isWaiting = false;
-      document.getElementById('typing-indicator').classList.remove('visible');
-      // Re-enable mic after bot responds
-      const micBtn = document.getElementById('mic-btn');
-      if (micBtn) micBtn.disabled = false;
-    }
-
-    // ─── Scroll to bottom ───
-    function scrollToBottom() {
-      const win = document.getElementById('chat-window');
-      if (win) {
-        setTimeout(() => {
-          win.scrollTop = win.scrollHeight;
-        }, 50);
+        insertBeforeTyping(row);
+        scrollToBottom();
       }
-    }
 
-    // ─── API call ───
-    async function sendToAPI(message) {
-      showTyping();
-      try {
-        // Construct the payload to mirror production frontend exactly
-        let formattedMessage = message;
-        if (selectedLanguage.code !== 'en') {
-          formattedMessage = `Please reply in ${selectedLanguage.name} (${selectedLanguage.nativeName}).\nUser message: ${message}`;
-        }
-
-        const payload = {
-          thread_id: thread_id,
-          message: formattedMessage,
-          language_code: selectedLanguage.code,
-          language_name: selectedLanguage.name,
-          language_native_name: selectedLanguage.nativeName
-        };
-
-        const res = await fetch(`${API_BASE}/chat`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-        const data = await res.json();
-        hideTyping();
-
-        if (data.agent) {
-          currentAgent = data.agent.replace('_agent', '');
-        }
-
-        appendBotBubble(data.reply, currentAgent, data.step);
-
-        // Control onboarding pills dynamically based on step
-        if (data.step === 'start') {
-          showPills();
-        } else {
-          hidePills();
-        }
-
-        if (data.step === 'ended') {
-          lockInput();
-        }
-
-      } catch (err) {
-        hideTyping();
-        appendBotBubble(
-          "I'm having a little trouble connecting right now. Please try again in a moment.",
-          currentAgent
-        );
-        console.error('API error:', err);
+      // ─── Insert message before typing indicator ───
+      function insertBeforeTyping(el) {
+        const win = document.getElementById("chat-window");
+        const typing = document.getElementById("typing-indicator");
+        win.insertBefore(el, typing);
       }
-    }
 
-    // ─── Helpers ───
-    function lockInput() {
-      const input = document.getElementById('chat-input');
-      const sendBtn = document.getElementById('send-btn');
-      const micBtn = document.getElementById('mic-btn');
-      input.disabled = true;
-      input.placeholder = "Conversation ended. Refresh to start a new chat.";
-      input.style.cursor = "not-allowed";
-      sendBtn.disabled = true;
-      sendBtn.style.cursor = "not-allowed";
-      sendBtn.style.opacity = "0.5";
-      if (micBtn) {
-        micBtn.disabled = true;
-        micBtn.style.cursor = "not-allowed";
-        micBtn.style.opacity = "0.5";
+      // ─── Show/hide typing indicator ───
+      function showTyping() {
+        isWaiting = true;
+        document.getElementById("typing-indicator").classList.add("visible");
+        // Disable mic while bot is typing
+        const micBtn = document.getElementById("mic-btn");
+        if (micBtn) micBtn.disabled = true;
+        scrollToBottom();
       }
-    }
 
-    function escapeHtml(str) {
-      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
+      function hideTyping() {
+        isWaiting = false;
+        document.getElementById("typing-indicator").classList.remove("visible");
+        // Re-enable mic after bot responds
+        const micBtn = document.getElementById("mic-btn");
+        if (micBtn) micBtn.disabled = false;
+      }
 
-    function formatText(str) {
-      let formatted = escapeHtml(str);
+      // ─── Scroll to bottom ───
+      function scrollToBottom() {
+        const win = document.getElementById("chat-window");
+        if (win) {
+          setTimeout(() => {
+            win.scrollTop = win.scrollHeight;
+          }, 50);
+        }
+      }
 
-      // Highlight bold text
-      formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      // ─── API call ───
+      async function sendToAPI(message) {
+        showTyping();
+        try {
+          // Construct the payload to mirror production frontend exactly
+          let formattedMessage = message;
+          if (selectedLanguage.code !== "en") {
+            formattedMessage = `Please reply in ${selectedLanguage.name} (${selectedLanguage.nativeName}).\nUser message: ${message}`;
+          }
 
-      // Convert list formatting (e.g. * Item or - Item) into structured HTML lists
-      const hasBullet = formatted.includes('\n* ') || formatted.startsWith('* ') ||
-        formatted.includes('\n- ') || formatted.startsWith('- ') ||
-        formatted.includes('\n&bull; ') || formatted.startsWith('&bull; ');
+          const payload = {
+            thread_id: thread_id,
+            message: formattedMessage,
+            language_code: selectedLanguage.code,
+            language_name: selectedLanguage.name,
+            language_native_name: selectedLanguage.nativeName,
+          };
 
-      if (hasBullet) {
-        const lines = formatted.split('\n');
-        let inList = false;
-        const resultLines = [];
+          const res = await fetch(`${API_BASE}/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
 
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i];
-          const trimmed = line.trim();
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-          if (trimmed === "") {
-            // Lookahead: if we are currently inside a list and another bullet point follows,
-            // skip the empty line to keep all bullet items unified in a single, tight list.
-            if (inList) {
-              let hasMoreBullets = false;
-              for (let j = i + 1; j < lines.length; j++) {
-                const nextTrimmed = lines[j].trim();
-                if (nextTrimmed !== "") {
-                  if (nextTrimmed.startsWith('* ') || nextTrimmed.startsWith('- ') || nextTrimmed.startsWith('&bull; ')) {
-                    hasMoreBullets = true;
+          const data = await res.json();
+          hideTyping();
+
+          if (data.agent) {
+            currentAgent = data.agent.replace("_agent", "");
+          }
+
+          appendBotBubble(data.reply, currentAgent, data.step);
+
+          // Control onboarding pills dynamically based on step
+          if (data.step === "start") {
+            showPills();
+          } else {
+            hidePills();
+          }
+
+          if (data.step === "ended") {
+            lockInput();
+          }
+        } catch (err) {
+          hideTyping();
+          appendBotBubble(
+            "I'm having a little trouble connecting right now. Please try again in a moment.",
+            currentAgent,
+          );
+          console.error("API error:", err);
+        }
+      }
+
+      // ─── Helpers ───
+      function lockInput() {
+        const input = document.getElementById("chat-input");
+        const sendBtn = document.getElementById("send-btn");
+        const micBtn = document.getElementById("mic-btn");
+        input.disabled = true;
+        input.placeholder = "Conversation ended. Refresh to start a new chat.";
+        input.style.cursor = "not-allowed";
+        sendBtn.disabled = true;
+        sendBtn.style.cursor = "not-allowed";
+        sendBtn.style.opacity = "0.5";
+        if (micBtn) {
+          micBtn.disabled = true;
+          micBtn.style.cursor = "not-allowed";
+          micBtn.style.opacity = "0.5";
+        }
+      }
+
+      function escapeHtml(str) {
+        return str
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function formatText(str) {
+        let formatted = escapeHtml(str);
+
+        // Highlight bold text
+        formatted = formatted.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
+        // Convert list formatting (e.g. * Item or - Item) into structured HTML lists
+        const hasBullet =
+          formatted.includes("\n* ") ||
+          formatted.startsWith("* ") ||
+          formatted.includes("\n- ") ||
+          formatted.startsWith("- ") ||
+          formatted.includes("\n&bull; ") ||
+          formatted.startsWith("&bull; ");
+
+        if (hasBullet) {
+          const lines = formatted.split("\n");
+          let inList = false;
+          const resultLines = [];
+
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const trimmed = line.trim();
+
+            if (trimmed === "") {
+              // Lookahead: if we are currently inside a list and another bullet point follows,
+              // skip the empty line to keep all bullet items unified in a single, tight list.
+              if (inList) {
+                let hasMoreBullets = false;
+                for (let j = i + 1; j < lines.length; j++) {
+                  const nextTrimmed = lines[j].trim();
+                  if (nextTrimmed !== "") {
+                    if (
+                      nextTrimmed.startsWith("* ") ||
+                      nextTrimmed.startsWith("- ") ||
+                      nextTrimmed.startsWith("&bull; ")
+                    ) {
+                      hasMoreBullets = true;
+                    }
+                    break;
                   }
-                  break;
+                }
+                if (hasMoreBullets) {
+                  continue;
                 }
               }
-              if (hasMoreBullets) {
-                continue;
+            }
+
+            const isBulletItem =
+              trimmed.startsWith("* ") ||
+              trimmed.startsWith("- ") ||
+              trimmed.startsWith("&bull; ");
+            if (isBulletItem) {
+              if (!inList) {
+                resultLines.push(
+                  '<ul style="margin: 4px 0; padding-left: 20px; list-style-type: disc;">',
+                );
+                inList = true;
               }
+              // Extract item content (strip the '* ', '- ', or '&bull; ')
+              const itemText = trimmed.replace(/^(\*\s*|-\s*|&bull;\s*)/, "");
+              resultLines.push(`<li style="margin: 3px 0;">${itemText}</li>`);
+            } else {
+              if (inList) {
+                resultLines.push("</ul>");
+                inList = false;
+              }
+              resultLines.push(line + "<br>");
             }
           }
-
-          const isBulletItem = trimmed.startsWith('* ') || trimmed.startsWith('- ') || trimmed.startsWith('&bull; ');
-          if (isBulletItem) {
-            if (!inList) {
-              resultLines.push('<ul style="margin: 4px 0; padding-left: 20px; list-style-type: disc;">');
-              inList = true;
-            }
-            // Extract item content (strip the '* ', '- ', or '&bull; ')
-            const itemText = trimmed.replace(/^(\*\s*|-\s*|&bull;\s*)/, '');
-            resultLines.push(`<li style="margin: 3px 0;">${itemText}</li>`);
-          } else {
-            if (inList) {
-              resultLines.push('</ul>');
-              inList = false;
-            }
-            resultLines.push(line + '<br>');
+          if (inList) {
+            resultLines.push("</ul>");
           }
+          formatted = resultLines.join("");
+        } else {
+          formatted = formatted.replace(/\n/g, "<br>");
         }
-        if (inList) {
-          resultLines.push('</ul>');
-        }
-        formatted = resultLines.join('');
-      } else {
-        formatted = formatted.replace(/\n/g, '<br>');
+
+        return formatted;
       }
 
-      return formatted;
-    }
+      // ─── Auto-resize textarea ───
+      const textarea = document.getElementById("chat-input");
+      textarea.addEventListener("input", () => {
+        textarea.style.height = "36px";
+        textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
+      });
+      textarea.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
 
-    // ─── Auto-resize textarea ───
-    const textarea = document.getElementById('chat-input');
-    textarea.addEventListener('input', () => {
-      textarea.style.height = '36px';
-      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
-    });
-    textarea.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
-    });
-
-    // Show initial pills and check scroll on load
-    window.addEventListener('load', () => {
-      showPills();
-      scrollToBottom();
-    });
-  </script>
-</body>
-
+      // Show initial pills and check scroll on load
+      window.addEventListener("load", () => {
+        showPills();
+        scrollToBottom();
+      });
+    </script>
+  </body>
 </html>

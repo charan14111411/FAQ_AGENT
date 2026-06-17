@@ -11,10 +11,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install
-COPY requirements.txt .
-RUN pip install --no-cache-dir --root-user-action=ignore --upgrade pip && \
-    pip install --no-cache-dir --root-user-action=ignore -r requirements.txt
+# Copy the uv binary from the official image (pinned for reproducible builds)
+COPY --from=ghcr.io/astral-sh/uv:0.11.8 /uv /uvx /bin/
+
+# Copy the pinned lockfile and install with uv (installs into the system
+# interpreter; no virtualenv needed inside the container)
+COPY requirements.lock .
+RUN uv pip install --system --no-cache -r requirements.lock
 
 # Pre-download and cache the sentence-transformers model (all-MiniLM-L6-v2) during the build phase.
 # This ensures fast container boot times and allows the container to start offline.
